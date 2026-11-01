@@ -1,0 +1,17 @@
+Cloudflare dynamic DNS client for multi-WAN setups.
+
+Every entry is bound to an interface. The public address is taken from the
+interface itself (e.g. PPPoE with a public IP) or queried from a check service
+using the interface address as source. A policy routing rule (route-to) makes
+sure the check request actually leaves through that interface's gateway, so
+each WAN reports its own public IP instead of the one of the default route.
+
+Records are updated via the Cloudflare API (API token), several interfaces can
+maintain the same hostname (round robin), records are tagged via their comment.
+
+Plugin Changelog
+================
+
+1.0
+
+* Initial release

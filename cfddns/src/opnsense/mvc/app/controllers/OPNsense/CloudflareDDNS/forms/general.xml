@@ -1,0 +1,32 @@
+<form>
+    <field>
+        <id>cfddns.general.enabled</id>
+        <label>Aktiviert</label>
+        <type>checkbox</type>
+        <help>Cloudflare DDNS aktivieren. Die Einträge werden per Cron jede Minute auf Fälligkeit geprüft (Intervall pro Eintrag) und zusätzlich sofort, wenn sich eine Interface-Adresse ändert.</help>
+    </field>
+    <field>
+        <id>cfddns.general.policy_routing</id>
+        <label>Policy-Routing für IP-Check</label>
+        <type>checkbox</type>
+        <help>Erzeugt pro verwendetem Interface eine Firewall-Regel (route-to), damit HTTPS-Anfragen der Firewall mit der Adresse dieses Interfaces auch über dessen Gateway rausgehen. Ohne diese Regel landet die Abfrage oft über die Default-Route – dann melden alle Einträge dieselbe IP.</help>
+    </field>
+    <field>
+        <id>cfddns.general.duplicate_guard</id>
+        <label>Schutz vor falscher IP</label>
+        <type>checkbox</type>
+        <help>Liefert der Webdienst für ein Interface eine IP, die bereits einem anderen Interface zugeordnet ist, wird nicht aktualisiert und ein Fehler angezeigt (typisches Zeichen für falsches Routing).</help>
+    </field>
+    <field>
+        <id>cfddns.general.timeout</id>
+        <label>Timeout (Sekunden)</label>
+        <type>text</type>
+        <help>Maximale Dauer einer IP-Abfrage.</help>
+    </field>
+    <field>
+        <id>cfddns.general.resync_hours</id>
+        <label>Abgleich mit Cloudflare (Stunden)</label>
+        <type>text</type>
+        <help>Auch ohne IP-Änderung wird spätestens nach dieser Zeit geprüft, ob die Records bei Cloudflare noch stimmen.</help>
+    </field>
+</form>

@@ -1,0 +1,115 @@
+<model>
+    <mount>//OPNsense/CloudflareDDNS</mount>
+    <version>1.0.0</version>
+    <description>Cloudflare DDNS (per interface)</description>
+    <items>
+        <general>
+            <enabled type="BooleanField">
+                <Default>0</Default>
+                <Required>Y</Required>
+            </enabled>
+            <policy_routing type="BooleanField">
+                <Default>1</Default>
+                <Required>Y</Required>
+            </policy_routing>
+            <duplicate_guard type="BooleanField">
+                <Default>1</Default>
+                <Required>Y</Required>
+            </duplicate_guard>
+            <timeout type="IntegerField">
+                <Default>10</Default>
+                <Required>Y</Required>
+                <MinimumValue>2</MinimumValue>
+                <MaximumValue>60</MaximumValue>
+            </timeout>
+            <resync_hours type="IntegerField">
+                <Default>6</Default>
+                <Required>Y</Required>
+                <MinimumValue>1</MinimumValue>
+                <MaximumValue>168</MaximumValue>
+            </resync_hours>
+        </general>
+        <accounts>
+            <account type="ArrayField">
+                <enabled type="BooleanField">
+                    <Default>1</Default>
+                    <Required>Y</Required>
+                </enabled>
+                <description type="TextField">
+                    <Required>N</Required>
+                    <Mask>/^.{0,255}$/u</Mask>
+                </description>
+                <interface type="InterfaceField">
+                    <Required>Y</Required>
+                    <ValidationMessage>Bitte ein Interface wählen.</ValidationMessage>
+                </interface>
+                <ipversion type="OptionField">
+                    <Required>Y</Required>
+                    <Default>v4</Default>
+                    <OptionValues>
+                        <v4>IPv4 (A)</v4>
+                        <v6>IPv6 (AAAA)</v6>
+                        <both>IPv4 + IPv6</both>
+                    </OptionValues>
+                </ipversion>
+                <checkip type="OptionField">
+                    <Required>Y</Required>
+                    <Default>auto</Default>
+                    <OptionValues>
+                        <auto>Automatisch</auto>
+                        <web>Webdienst über dieses Interface</web>
+                        <interface>Adresse des Interfaces</interface>
+                    </OptionValues>
+                </checkip>
+                <service type="OptionField">
+                    <Required>Y</Required>
+                    <Default>cloudflare</Default>
+                    <OptionValues>
+                        <cloudflare>Cloudflare (1.1.1.1/cdn-cgi/trace)</cloudflare>
+                        <ipify>ipify</ipify>
+                        <icanhazip>icanhazip</icanhazip>
+                        <identme>ident.me</identme>
+                        <custom>Eigene URL</custom>
+                    </OptionValues>
+                </service>
+                <custom_url4 type="UrlField">
+                    <Required>N</Required>
+                </custom_url4>
+                <custom_url6 type="UrlField">
+                    <Required>N</Required>
+                </custom_url6>
+                <zone type="TextField">
+                    <Required>Y</Required>
+                    <Mask>/^[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?$/</Mask>
+                    <ValidationMessage>Zonenname (z.B. example.com) oder Zone-ID angeben.</ValidationMessage>
+                </zone>
+                <hostnames type="TextField">
+                    <Required>Y</Required>
+                    <Mask>/^(@|[a-zA-Z0-9_*]([a-zA-Z0-9_.*-]*[a-zA-Z0-9])?)(,(@|[a-zA-Z0-9_*]([a-zA-Z0-9_.*-]*[a-zA-Z0-9])?))*$/</Mask>
+                    <ValidationMessage>Kommagetrennte Liste von Hostnamen (z.B. home,vpn oder @ für die Zone selbst).</ValidationMessage>
+                </hostnames>
+                <token type="UpdateOnlyTextField">
+                    <Required>Y</Required>
+                    <Mask>/^[A-Za-z0-9_\-]{20,}$/</Mask>
+                    <ValidationMessage>Ungültiges API-Token.</ValidationMessage>
+                </token>
+                <proxied type="BooleanField">
+                    <Default>0</Default>
+                    <Required>Y</Required>
+                </proxied>
+                <ttl type="IntegerField">
+                    <Default>1</Default>
+                    <Required>Y</Required>
+                    <MinimumValue>1</MinimumValue>
+                    <MaximumValue>86400</MaximumValue>
+                </ttl>
+                <interval type="IntegerField">
+                    <Default>5</Default>
+                    <Required>Y</Required>
+                    <MinimumValue>1</MinimumValue>
+                    <MaximumValue>1440</MaximumValue>
+                </interval>
+            </account>
+        </accounts>
+    </items>
+</model>

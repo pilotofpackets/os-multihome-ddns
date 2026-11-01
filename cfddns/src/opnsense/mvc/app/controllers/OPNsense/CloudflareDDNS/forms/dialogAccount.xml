@@ -1,0 +1,81 @@
+<form>
+    <field>
+        <id>account.enabled</id>
+        <label>Aktiviert</label>
+        <type>checkbox</type>
+    </field>
+    <field>
+        <id>account.description</id>
+        <label>Beschreibung</label>
+        <type>text</type>
+    </field>
+    <field>
+        <id>account.interface</id>
+        <label>Interface</label>
+        <type>dropdown</type>
+        <help>Interface (DSL-Anschluss), dessen öffentliche IP eingetragen werden soll.</help>
+    </field>
+    <field>
+        <id>account.ipversion</id>
+        <label>IP-Version</label>
+        <type>dropdown</type>
+    </field>
+    <field>
+        <id>account.checkip</id>
+        <label>IP-Ermittlung</label>
+        <type>dropdown</type>
+        <help>Automatisch: hat das Interface selbst eine öffentliche Adresse (z.B. PPPoE), wird diese genommen, sonst (Router davor, CGNAT) wird der Webdienst über dieses Interface abgefragt.</help>
+    </field>
+    <field>
+        <id>account.service</id>
+        <label>Check-Dienst</label>
+        <type>dropdown</type>
+        <help>Dienst, der die öffentliche IP zurückgibt. Cloudflare wird direkt per IP angesprochen (keine DNS-Abhängigkeit).</help>
+    </field>
+    <field>
+        <id>account.custom_url4</id>
+        <label>Eigene URL (IPv4)</label>
+        <type>text</type>
+        <help>Muss die IP als Text liefern (z.B. https://example.com/ip).</help>
+    </field>
+    <field>
+        <id>account.custom_url6</id>
+        <label>Eigene URL (IPv6)</label>
+        <type>text</type>
+    </field>
+    <field>
+        <id>account.zone</id>
+        <label>Zone</label>
+        <type>text</type>
+        <help>Zonenname bei Cloudflare (z.B. example.com) oder die Zone-ID.</help>
+    </field>
+    <field>
+        <id>account.hostnames</id>
+        <label>Hostnamen</label>
+        <type>text</type>
+        <help>Kommagetrennt, relativ zur Zone oder voll qualifiziert (z.B. "dsl1,vpn" oder "dsl1.example.com"). "@" steht für die Zone selbst. Mehrere Einträge dürfen denselben Namen pflegen (Round-Robin) – jeder verwaltet nur seinen eigenen Record.</help>
+    </field>
+    <field>
+        <id>account.token</id>
+        <label>API-Token</label>
+        <type>password</type>
+        <help>Cloudflare API-Token mit den Rechten Zone:Read und DNS:Edit für diese Zone. Beim Bearbeiten leer lassen, um das gespeicherte Token zu behalten.</help>
+    </field>
+    <field>
+        <id>account.proxied</id>
+        <label>Proxied</label>
+        <type>checkbox</type>
+        <help>Über Cloudflare proxyen (orangene Wolke). Für VPN/Portweiterleitungen normalerweise aus.</help>
+    </field>
+    <field>
+        <id>account.ttl</id>
+        <label>TTL</label>
+        <type>text</type>
+        <help>1 = automatisch, sonst Sekunden (min. 30/60 je nach Tarif).</help>
+    </field>
+    <field>
+        <id>account.interval</id>
+        <label>Prüfintervall (Minuten)</label>
+        <type>text</type>
+    </field>
+</form>
