@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.1 – 2026-11-02
+
+- Installer: clear the menu and ACL cache in /var/lib/php/tmp (current OPNsense), so the menu entry shows up right away
+
 ## 2.0.0 – 2026-11-02
 
 - Renamed from "Cloudflare DDNS" (cfddns) to **Multi-WAN DynDNS** / os-multihome-ddns

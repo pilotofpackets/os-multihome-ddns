@@ -35,7 +35,8 @@ fi
 
 echo "Lade configd, Menü, Syslog und Cron neu ..."
 service configd restart
-rm -f /tmp/opnsense_menu_cache.xml /tmp/opnsense_acl_cache.json
+rm -f /var/lib/php/tmp/opnsense_menu_cache.xml /var/lib/php/tmp/opnsense_acl_cache.json \
+      /tmp/opnsense_menu_cache.xml /tmp/opnsense_acl_cache.json
 configctl template reload OPNsense/Syslog >/dev/null
 configctl syslog restart >/dev/null || true
 configctl cron restart >/dev/null || true
