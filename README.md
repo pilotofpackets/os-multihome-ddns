@@ -1,4 +1,4 @@
-# os-multihome-ddns – Multi-WAN DynDNS for OPNsense
+# os-multihome-ddns – Multihome DynDNS for OPNsense
 
 [![Tests](https://github.com/pilotofpackets/os-multihome-ddns/actions/workflows/tests.yml/badge.svg)](https://github.com/pilotofpackets/os-multihome-ddns/actions/workflows/tests.yml)
 [![License: BSD-2-Clause](https://img.shields.io/badge/license-BSD--2--Clause-blue.svg)](LICENSE)
@@ -90,9 +90,9 @@ sh /tmp/os-multihome-ddns-main/install.sh
 
 SSH can be enabled under *System › Settings › Administration › Secure Shell*.
 
-Then reload the web UI. The plugin lives under **Services › Multi-WAN DynDNS**.
+Then reload the web UI. The plugin lives under **Services › Multihome DynDNS**.
 
-**Updating:** run the same three commands again. Settings are kept in `config.xml`.
+**Updating:** run the same three commands again. Settings are kept in `config.xml`; an installation of the former *Multi-WAN DynDNS* (2.0) is taken over automatically, including its settings.
 
 **Uninstalling:** `sh /tmp/os-multihome-ddns-main/uninstall.sh` (settings stay in `config.xml`).
 
@@ -147,20 +147,20 @@ e-mail address as username switches to the legacy global API key.
 
 Files on the firewall:
 
-- state: `/var/db/multiwanddns/state.json`
-- log: `/var/log/multiwanddns/`
+- state: `/var/db/multihomeddns/state.json`
+- log: `/var/log/multihomeddns/`
 
 ## Development
 
 ```
-multiwan-ddns/                      plugin in opnsense/plugins layout (dns/multiwan-ddns)
+multihome-ddns/                      plugin in opnsense/plugins layout (dns/multihome-ddns)
 ├── Makefile, pkg-descr
 └── src/
-    ├── etc/inc/plugins.inc.d/multiwanddns.inc        firewall rules, cron, newwanip/monitor hooks, syslog
+    ├── etc/inc/plugins.inc.d/multihomeddns.inc        firewall rules, cron, newwanip/monitor hooks, syslog
     └── opnsense/
-        ├── mvc/app/…/MultiWanDDNS/                   model, API + UI controllers, forms, views
-        ├── scripts/multiwanddns/
-        │   ├── multiwanddns.py                       CLI used by configd
+        ├── mvc/app/…/MultihomeDDNS/                   model, API + UI controllers, forms, views
+        ├── scripts/multihomeddns/
+        │   ├── multihomeddns.py                       CLI used by configd
         │   ├── gateways.php                          gateways + dpinger status as JSON
         │   └── lib/                                  detect, runner, failover, log, config
         │       └── account/                          provider modules (from os-ddclient, Cloudflare own)
@@ -175,7 +175,7 @@ Run the tests locally (Python 3 with `requests` and `dnspython`, optional `php-c
 sh tests/run.sh
 ```
 
-To build a real package, copy `multiwan-ddns/` to `dns/multiwan-ddns` in a checkout of
+To build a real package, copy `multihome-ddns/` to `dns/multihome-ddns` in a checkout of
 [opnsense/plugins](https://github.com/opnsense/plugins) and run `make package`.
 
 The web UI is currently in German. Translations and pull requests are welcome.

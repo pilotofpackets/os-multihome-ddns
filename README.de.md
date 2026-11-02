@@ -1,4 +1,4 @@
-# os-multihome-ddns – Multi-WAN DynDNS für OPNsense
+# os-multihome-ddns – Multihome DynDNS für OPNsense
 
 **DynDNS für Firewalls mit mehreren Internetanschlüssen.**
 
@@ -63,9 +63,9 @@ sh /tmp/os-multihome-ddns-main/install.sh
 ```
 
 SSH lässt sich unter *System › Einstellungen › Verwaltung › Secure Shell* einschalten.
-Danach die Weboberfläche neu laden. Das Plugin findest du unter **Dienste › Multi-WAN DynDNS**.
+Danach die Weboberfläche neu laden. Das Plugin findest du unter **Dienste › Multihome DynDNS**.
 
-- **Aktualisieren:** dieselben drei Befehle erneut ausführen; die Einstellungen bleiben erhalten.
+- **Aktualisieren:** dieselben drei Befehle erneut ausführen; die Einstellungen bleiben erhalten. Eine Installation der früheren Version *Multi-WAN DynDNS* (2.0) wird samt Einstellungen automatisch übernommen.
 - **Entfernen:** `sh /tmp/os-multihome-ddns-main/uninstall.sh`
 
 ## Einrichtung
@@ -97,7 +97,7 @@ und **Zone › Zone › Read** anlegen, beschränkt auf die Zone. Den Benutzerna
 | Oranges **CGNAT** | Der Anschluss liegt hinter Carrier-Grade NAT und ist von außen über IPv4 nicht erreichbar. |
 | Rotes **privat** | Es wurde eine private Adresse geliefert; sie wird nie geschrieben. |
 
-Log: *Dienste › Multi-WAN DynDNS › Log File* (Stufe „Debug“ für alle Details).
+Log: *Dienste › Multihome DynDNS › Log File* (Stufe „Debug“ für alle Details).
 
 ## Lizenz
 

@@ -3,7 +3,7 @@ BSD 2-Clause License
 Copyright (c) 2026, pilotofpackets
 All rights reserved.
 
-Portions (multiwan-ddns/src/opnsense/scripts/multiwanddns/lib/account/ and the
+Portions (multihome-ddns/src/opnsense/scripts/multihomeddns/lib/account/ and the
 list of check services) are derived from os-ddclient:
 Copyright (c) 2022-2025 Ad Schellevis <ad@opnsense.org>, Deciso B.V. and contributors.
 

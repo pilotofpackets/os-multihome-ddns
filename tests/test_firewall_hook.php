@@ -9,7 +9,7 @@ namespace OPNsense\Firewall { class Plugin { public $rules=[]; private $map=['WA
 namespace {
   function mwexec($c){ echo "mwexec: $c\n"; }
   require getenv('INC');
-  $fw = new \OPNsense\Firewall\Plugin; multiwanddns_firewall($fw);
+  $fw = new \OPNsense\Firewall\Plugin; multihomeddns_firewall($fw);
   foreach ($fw->rules as [$p,$c]) printf("prio %d: pass out quick %s %s from %s port %s gw=%s | %s\n",$p,$c['ipprotocol'],$c['protocol'],$c['from'],$c['destination']['port'],$c['gateway'],$c['descr']);
-  print_r(multiwanddns_cron()); multiwanddns_configure_newwanip(); multiwanddns_configure_monitor(); print_r(array_keys(multiwanddns_configure()));
+  print_r(multihomeddns_cron()); multihomeddns_configure_newwanip(); multihomeddns_configure_monitor(); print_r(array_keys(multihomeddns_configure()));
 }

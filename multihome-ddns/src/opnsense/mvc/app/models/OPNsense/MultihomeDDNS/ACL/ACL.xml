@@ -1,0 +1,11 @@
+<acl>
+    <page-services-multihomeddns>
+        <name>Services: Multihome DynDNS</name>
+        <patterns>
+            <pattern>ui/multihomeddns/*</pattern>
+            <pattern>api/multihomeddns/*</pattern>
+            <pattern>ui/diagnostics/log/core/multihomeddns/*</pattern>
+            <pattern>api/diagnostics/log/core/multihomeddns/*</pattern>
+        </patterns>
+    </page-services-multihomeddns>
+</acl>

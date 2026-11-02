@@ -153,4 +153,13 @@ s = runner.services()
 ok('cloudflare' in s['services'] and 'netcup' in s['services'] and 'noip' in s['services'], '%d Anbieter, nicht ladbar: %s' % (len(s['services']), list(s['unavailable'])))
 st = runner.status()
 ok(st['failovers'][0]['history'] and st['failovers'][0]['members'], 'Failover-Status mit Mitgliedern und Historie')
+print('== 14 Records mit Kennzeichen der Vorgaengerversion werden uebernommen, nicht dupliziert')
+uid = '11111111-1111-1111-1111-111111111111'
+for rec in DB['records']:
+    if rec.get('comment') == 'multihome-ddns:' + uid:
+        rec['comment'] = 'multiwan-ddns:' + uid
+count = len(DB['records'])
+run('force', [uid])
+ok(len(DB['records']) == count, 'keine zusaetzlichen Records angelegt')
+ok(not any((r.get('comment') or '').startswith('multiwan-ddns:') for r in DB['records']), 'Kennzeichen auf multihome-ddns umgeschrieben')
 print('ALLE TESTS OK')

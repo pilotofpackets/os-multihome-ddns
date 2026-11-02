@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.1.0 – 2026-11-02
+
+- Renamed to **Multihome DynDNS** (package os-multihome-ddns, menu *Services › Multihome DynDNS*,
+  URLs `/ui/multihomeddns`, configd `multihomeddns`, log `/var/log/multihomeddns`)
+- Installer takes over a 2.0 installation: settings in config.xml, state file and
+  Cloudflare records (old record tag `multiwan-ddns:` is recognised and rewritten)
+
 ## 2.0.1 – 2026-11-02
 
 - Installer: clear the menu and ACL cache in /var/lib/php/tmp (current OPNsense), so the menu entry shows up right away

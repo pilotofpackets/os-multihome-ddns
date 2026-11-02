@@ -1,0 +1,10 @@
+<menu>
+    <Services>
+        <MultihomeDDNS VisibleName="Multihome DynDNS" cssClass="fa fa-globe fa-fw">
+            <Entries order="10" VisibleName="Einträge" url="/ui/multihomeddns/"/>
+            <Failover order="20" VisibleName="Failover-DNS" url="/ui/multihomeddns/failover"/>
+            <General order="30" VisibleName="Einstellungen" url="/ui/multihomeddns/general"/>
+            <Log order="100" VisibleName="Log File" url="/ui/diagnostics/log/core/multihomeddns"/>
+        </MultihomeDDNS>
+    </Services>
+</menu>
