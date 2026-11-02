@@ -9,7 +9,7 @@ import time
 
 from .account import AccountFactory
 from .config import load_config, label
-from .detect import detect, policy_rule, FAMILIES, CLASS_LABEL
+from .detect import detect, policy_rule, nat_exemptions, FAMILIES, CLASS_LABEL
 from .failover import choose, gateway_status, member_gateway
 from .log import Logger
 
@@ -102,6 +102,11 @@ def check_policy_routing(detections, cfg, log):
             rule = policy_rule(info['device'], info['family'], proto)
             seen[key] = rule
             info['policy_rule'] = rule
+            if info['family'] == 'v4':
+                info['nat_exempt'] = len(nat_exemptions(info['device']))
+                if rule and not info['nat_exempt'] and cfg['policy_routing']:
+                    log.warning('%s: keine NAT-Ausnahme aktiv - Outbound-NAT anderer Interfaces kann die Abfrage '
+                                'umleiten. Bitte "Anwenden" klicken.' % info['interface_descr'])
             if rule:
                 log.debug('Policy-Routing aktiv für %s %s: %s' % (info['device'], FAMILIES[info['family']], rule))
             elif cfg['policy_routing']:
@@ -114,8 +119,20 @@ def check_policy_routing(detections, cfg, log):
 
 
 def flag_duplicates(detections, cfg, state, now, log):
-    """ Gleiche per Dienst ermittelte Adresse auf mehreren Interfaces = falsches Routing """
+    """ Gleiche per Dienst ermittelte Adresse auf mehreren Interfaces = falsches Routing.
+        Liegt die Adresse direkt (öffentlich) auf einem Interface, gehört sie eindeutig diesem;
+        dann wird nur der andere Eintrag blockiert.
+    """
     owners = {}
+    local_owner = {}
+    for acc, info in detections:
+        if info.get('local') and info.get('local_class') == 'public':
+            local_owner[(info['family'], info['local'])] = acc['interface']
+    for uuid, entry in state['accounts'].items():
+        if entry.get('local') and entry.get('local_class') == 'public':
+            for acc in cfg['accounts']:
+                if acc['uuid'] == uuid:
+                    local_owner.setdefault((acc['ipversion'], entry['local']), acc['interface'])
     by_uuid = {acc['uuid']: acc for acc in cfg['accounts'] if acc['enabled']}
     for uuid, entry in state['accounts'].items():
         acc = by_uuid.get(uuid)
@@ -125,8 +142,15 @@ def flag_duplicates(detections, cfg, state, now, log):
         if info.get('ip') and not info.get('blocked'):
             owners.setdefault((info['family'], info['ip']), set()).add(acc['interface'])
     for acc, info in detections:
+        # web/dns-Ergebnis, das dem eigenen öffentlichen Interface-Eintrag gleicht, ist eindeutig
+        if info.get('ip') and info.get('local') == info.get('ip'):
+            local_owner[(info['family'], info['ip'])] = acc['interface']
+    for acc, info in detections:
         if info.get('ip') and not info.get('error') and info['method'] in ('web', 'dns'):
-            others = owners.get((info['family'], info['ip']), set()) - {acc['interface']}
+            owner = local_owner.get((info['family'], info['ip']))
+            if owner == acc['interface']:
+                continue
+            others = {owner} if owner else owners.get((info['family'], info['ip']), set()) - {acc['interface']}
             if others:
                 names = sorted(cfg['interfaces'].get(n, {}).get('descr', n) for n in others)
                 info['conflict'] = True

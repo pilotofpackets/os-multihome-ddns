@@ -18,5 +18,9 @@ jobs:
           sudo apt-get update -qq && sudo apt-get install -y -qq php-cli > /dev/null
       - name: Lint
         run: python -m pyflakes multihome-ddns/src/opnsense/scripts/multihomeddns/multihomeddns.py multihome-ddns/src/opnsense/scripts/multihomeddns/lib/*.py multihome-ddns/src/opnsense/scripts/multihomeddns/lib/account/__init__.py multihome-ddns/src/opnsense/scripts/multihomeddns/lib/account/cloudflare.py
+      - name: Fetch OPNsense core rule classes
+        run: |
+          git clone -q --depth 1 --filter=blob:none --sparse https://github.com/opnsense/core /tmp/opnsense-core
+          git -C /tmp/opnsense-core sparse-checkout set src/opnsense/mvc/app/library/OPNsense/Firewall
       - name: Scenario tests
-        run: sh tests/run.sh
+        run: OPNSENSE_CORE=/tmp/opnsense-core sh tests/run.sh

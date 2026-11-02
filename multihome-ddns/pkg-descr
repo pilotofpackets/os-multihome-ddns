@@ -17,6 +17,10 @@ order/priority/latency strategies and immediate/delayed/manual failback.
 Plugin Changelog
 ================
 
+2.3
+
+* Fix route-to rule for web checks and NAT exemption for check traffic
+
 2.2
 
 * Redesigned overview pages, gateway per entry, extended test dialog

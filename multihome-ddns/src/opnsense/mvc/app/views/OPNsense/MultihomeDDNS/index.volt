@@ -40,6 +40,10 @@
                                 : mwBadge('label-danger', "{{ lang._('keine Regel aktiv') }}") + ' <small>' + (r.policy_routing_enabled
                                     ? "{{ lang._('kein Gateway auf dem Interface gefunden oder Einstellungen nicht angewendet') }}"
                                     : "{{ lang._('in den Einstellungen deaktiviert') }}") + '</small>')],
+                        ["{{ lang._('NAT-Ausnahme') }}", r.method === 'interface' || r.family !== 'IPv4' ? "{{ lang._('nicht nötig') }}" :
+                            (r.nat_exempt ? mwBadge('label-success', "{{ lang._('aktiv') }}") + ' <small class="text-muted">' + mwEsc(r.nat_exempt) + ' ' +
+                                "{{ lang._('Regeln – Outbound-NAT anderer Interfaces übersetzt die Abfrage nicht') }}" + '</small>'
+                                : mwBadge('label-danger', "{{ lang._('fehlt') }}") + ' <small>' + "{{ lang._('„Anwenden“ klicken – sonst kann die Outbound-NAT des Default-WAN die Abfrage umleiten') }}" + '</small>')],
                         ["{{ lang._('Gateway') }}", (r.gateway_chosen ? '<strong>' + mwEsc(r.gateway_chosen) + '</strong> <small class="text-muted">(' +
                             mwEsc(r.gateway_mode) + ')</small>' : '<span class="text-danger">' + "{{ lang._('kein Gateway auf diesem Interface – unter System › Gateways anlegen oder im Eintrag wählen') }}" + '</span>') +
                             ((r.gateways || []).length ? '<br/><small class="text-muted">' + "{{ lang._('Gateways auf dem Interface:') }}" + ' ' +

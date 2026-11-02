@@ -135,7 +135,8 @@ function multihomeddns_firewall(\OPNsense\Firewall\Plugin $fw)
                 // without route-to this rule would only bypass the default rules
                 continue;
             }
-            foreach ([['tcp', '80,443'], ['udp', '53']] as $proto) {
+            // single ports: OPNsense does not accept port lists ("80,443") in plugin rules
+            foreach ([['tcp', '80'], ['tcp', '443'], ['udp', '53']] as $proto) {
                 $fw->registerFilterRule(
                     1,
                     [
@@ -154,6 +155,32 @@ function multihomeddns_firewall(\OPNsense\Firewall\Plugin $fw)
                         'descr' => "Multihome DynDNS: IP-Check via {$descr}",
                     ]
                 );
+                if ($inet != 'inet') {
+                    continue;
+                }
+                /*
+                 * Locally originated packets are first routed by the routing table (default route).
+                 * Outbound NAT on that interface would translate the source address before the
+                 * filter rules are evaluated, so the route-to rule above could never match
+                 * (e.g. automatic outbound NAT for networks of interfaces without upstream gateway).
+                 * Exempt our check traffic from NAT on all other interfaces (before manual: 100
+                 * and automatic: 200 outbound rules).
+                 */
+                foreach ($ifmap as $otherif => $othercfg) {
+                    if (empty($othercfg['if']) || $othercfg['if'] == $device || $othercfg['if'] == 'lo0') {
+                        continue;
+                    }
+                    $fw->registerSourceNatRule(50, [
+                        'nonat' => true,
+                        'interface' => $otherif,
+                        'ipprotocol' => 'inet',
+                        'protocol' => $proto[0],
+                        'from' => "({$device})",
+                        'to' => 'any',
+                        'dstport' => $proto[1],
+                        'descr' => "Multihome DynDNS: no NAT for IP-Check via {$descr}",
+                    ]);
+                }
             }
         }
     }

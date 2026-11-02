@@ -221,10 +221,25 @@ def policy_rule(device, fam, proto='tcp'):
             _pf_rules = ''
     inet = 'inet6' if fam == 'v6' else 'inet'
     for line in _pf_rules.splitlines():
-        if ('route-to' in line and 'from (%s)' % device in line and ' %s ' % inet in line
-                and ' proto %s ' % proto in line and 'pass' in line.split('route-to')[0]):
+        if ('route-to' in line and re.search(r'from \{?\(%s(:\d+)?\)' % re.escape(device), line)
+                and ' %s ' % inet in line and ' proto %s ' % proto in line and 'pass' in line.split('route-to')[0]):
             return ' '.join(line.split())
     return None
+
+
+_pf_nat = None
+
+
+def nat_exemptions(device):
+    """ aktive 'no nat'-Ausnahmen für Verkehr mit der Quelladresse dieses Interfaces """
+    global _pf_nat
+    if _pf_nat is None:
+        try:
+            _pf_nat = subprocess.run([PFCTL, '-sn'], capture_output=True, text=True, timeout=15).stdout
+        except (OSError, subprocess.TimeoutExpired):
+            _pf_nat = ''
+    pattern = re.compile(r'^no nat on \S+ .*from \{?\(%s(:\d+)?\)' % re.escape(device))
+    return [' '.join(line.split()) for line in _pf_nat.splitlines() if pattern.search(line)]
 
 
 def detect(account, cfg, log):

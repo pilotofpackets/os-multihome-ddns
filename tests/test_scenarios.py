@@ -162,4 +162,11 @@ count = len(DB['records'])
 run('force', [uid])
 ok(len(DB['records']) == count, 'keine zusaetzlichen Records angelegt')
 ok(not any((r.get('comment') or '').startswith('multiwan-ddns:') for r in DB['records']), 'Kennzeichen auf multihome-ddns umgeschrieben')
+print('== 15 Routing kaputt, Ziel-IP liegt direkt auf einem Interface: nur der falsche Eintrag wird blockiert')
+os.system("sed -i 's#<description>DSL1</description><interface>wan</interface><ipversion>v4</ipversion><checkip>auto#<description>DSL1</description><interface>wan</interface><ipversion>v4</ipversion><checkip>web#' %s/config.xml" % T)
+os.environ['BROKEN'] = '1'; age(120); res = run('check')
+st = {r['description']: r for r in runner.status()['rows']}
+ok(st['DSL1']['status'] == 'ok', 'DSL1 (IP liegt auf dem eigenen Interface) bleibt OK')
+ok(st['DSL3']['status'] == 'blocked' and 'DSL1' in (st['DSL3']['error'] or ''), 'DSL3 blockiert mit Hinweis auf DSL1')
+del os.environ['BROKEN']
 print('ALLE TESTS OK')

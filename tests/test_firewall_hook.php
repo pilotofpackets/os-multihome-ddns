@@ -13,7 +13,8 @@ namespace OPNsense\Firewall { class Plugin { public $rules=[]; private $map=['WA
   function getInterfaceMapping(){ yield 'wan'=>['if'=>'pppoe0','descr'=>'DSL1']; yield 'opt1'=>['if'=>'igb1','descr'=>'DSL2']; yield 'opt2'=>['if'=>'igb2','descr'=>'DSL3']; }
   function getGateways(){ return new \OPNsense\Routing\Gateways; }
   function getGateway($gw){ return $this->map[$gw]; }
-  function registerFilterRule($p,$c,$d=null){ $this->rules[]=[$p,$c]; } } }
+  function registerFilterRule($p,$c,$d=null){ $this->rules[]=[$p,$c]; }
+  public $nat=[]; function registerSourceNatRule($p,$c){ $this->nat[]=[$p,$c]; } } }
 namespace {
   function mwexec($c){ echo "mwexec: $c\n"; }
   require getenv('INC');
@@ -22,7 +23,10 @@ namespace {
   foreach ($fw->rules as [$p,$c]) { $got[$c['from'].' '.$c['ipprotocol'].' '.$c['protocol']] = $c['gateway']; }
   $expect = ['(pppoe0) inet tcp'=>'WAN_PPPOE', '(pppoe0) inet6 tcp'=>'WAN_V6', '(igb1) inet tcp'=>'DSL2_ALT', '(igb2) inet tcp'=>'DSL3_GW'];
   foreach ($expect as $k=>$v) { if (($got[$k] ?? null) !== $v) { fwrite(STDERR, "FAIL hook: $k -> ".($got[$k] ?? 'none')." (expected $v)\n"); exit(1); } }
-  echo "hook OK: interface gateway, manual gateway, fallback gateway\n";
+  $natOwn = array_filter($fw->nat, function ($r) { return $r[1]['from'] == '(igb2)' && $r[1]['interface'] == 'opt2'; });
+  $natOther = array_filter($fw->nat, function ($r) { return $r[1]['from'] == '(igb2)' && $r[1]['interface'] == 'wan' && !empty($r[1]['nonat']) && $r[0] < 100; });
+  if ($natOwn || count($natOther) != 3) { fwrite(STDERR, "FAIL hook: NAT exemption wrong\n"); exit(1); }
+  echo "hook OK: interface gateway, manual gateway, fallback gateway, NAT exemption\n";
   foreach ($fw->rules as [$p,$c]) printf("prio %d: pass out quick %s %s from %s port %s gw=%s | %s\n",$p,$c['ipprotocol'],$c['protocol'],$c['from'],$c['destination']['port'],$c['gateway'],$c['descr']);
   print_r(multihomeddns_cron()); multihomeddns_configure_newwanip(); multihomeddns_configure_monitor(); print_r(array_keys(multihomeddns_configure()));
 }

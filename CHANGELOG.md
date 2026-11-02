@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.3.0 – 2026-11-02
+
+- **Fix:** the tcp route-to rule for the web check was silently dropped by OPNsense (port lists like
+  `80,443` are not accepted in plugin rules) – now one rule per port
+- **Fix:** outbound NAT of the default WAN translated the check traffic before the filter rules were
+  evaluated (interfaces without upstream gateway are part of automatic outbound NAT), so no route-to
+  rule could match – the plugin now adds `no nat` exemptions for its check traffic (before manual and
+  automatic outbound NAT). This is also why the stock ddclient reports the default WAN address.
+- Routing guard: an address that sits directly on an interface belongs to that interface, only the
+  other entry is blocked
+- Test dialog shows the NAT exemption; rules are now tested with the real OPNsense rule classes in CI
+
 ## 2.2.0 – 2026-11-02
 
 - Redesigned overview pages: status bar with counters, routing state and legend; fewer, two-line columns;

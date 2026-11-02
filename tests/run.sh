@@ -23,6 +23,15 @@ if command -v php >/dev/null 2>&1; then
     echo "### firewall hook"
     CFG="$T/hook_config.xml" INC="$ROOT/multihome-ddns/src/etc/inc/plugins.inc.d/multihomeddns.inc" \
         php -d error_reporting=E_ALL "$HERE/test_firewall_hook.php"
+    if [ -n "$OPNSENSE_CORE" ] && [ -d "$OPNSENSE_CORE/src/opnsense/mvc/app/library/OPNsense/Firewall" ]; then
+        echo "### firewall + NAT rules with the real OPNsense rule classes"
+        CORE="$OPNSENSE_CORE" CFG="$HERE/fixtures/hook_config.xml" \
+            INC="$ROOT/multihome-ddns/src/etc/inc/plugins.inc.d/multihomeddns.inc" \
+            php -d error_reporting=E_ALL "$HERE/test_real_rules.php" > "$T/real_rules.out" || { cat "$T/real_rules.out"; exit 1; }
+        tail -1 "$T/real_rules.out"
+    else
+        echo "### (real rule test skipped, set OPNSENSE_CORE=/path/to/opnsense-core)"
+    fi
     echo "### php lint"
     find "$ROOT/multihome-ddns" \( -name '*.php' -o -name '*.inc' \) -exec php -l {} \; | grep -v '^No syntax errors' || true
 fi
