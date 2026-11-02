@@ -2,10 +2,10 @@
     Multihome DynDNS - Cloudflare
 
     Ersetzt die Cloudflare-Implementierung von os-ddclient. Jeder Eintrag
-    markiert "seine" Records ueber den Kommentar, damit mehrere Interfaces
-    denselben Namen pflegen koennen (Round-Robin), ohne sich zu ueberschreiben.
+    markiert "seine" Records über den Kommentar, damit mehrere Interfaces
+    denselben Namen pflegen können (Round-Robin), ohne sich zu überschreiben.
 
-    Zugangsdaten wie bei os-ddclient: Passwort = API-Token (Bearer). Enthaelt der
+    Zugangsdaten wie bei os-ddclient: Passwort = API-Token (Bearer). Enthält der
     Benutzername ein "@", wird E-Mail + Global API Key verwendet.
 
     BSD 2-Clause License
@@ -19,7 +19,7 @@ import requests
 from . import BaseAccount
 
 COMMENT_TAG = 'multihome-ddns:'
-# Kennzeichen frueherer Versionen, werden beim naechsten Update umgeschrieben
+# Kennzeichen früherer Versionen, werden beim nächsten Update umgeschrieben
 LEGACY_TAGS = ('multiwan-ddns:',)
 
 
@@ -66,7 +66,7 @@ class Cloudflare(BaseAccount):
         try:
             data = resp.json()
         except ValueError:
-            raise CloudflareError('ungueltige Antwort (HTTP %d): %s' % (resp.status_code, resp.text[:200]))
+            raise CloudflareError('ungültige Antwort (HTTP %d): %s' % (resp.status_code, resp.text[:200]))
         self._log('-> HTTP %d success=%s' % (resp.status_code, data.get('success')))
         if not data.get('success'):
             errors = '; '.join('%s: %s' % (e.get('code'), e.get('message')) for e in (data.get('errors') or []))
@@ -85,7 +85,7 @@ class Cloudflare(BaseAccount):
         else:
             found = self._request('GET', '/zones?name=%s' % quote(zone))['result']
             if not found:
-                raise CloudflareError('Zone "%s" nicht gefunden (Token-Recht Zone:Read pruefen)' % zone)
+                raise CloudflareError('Zone "%s" nicht gefunden (Token-Recht Zone:Read prüfen)' % zone)
             result = found[0]
         self._state['zone'] = {'key': zone, 'id': result['id'], 'name': result['name'].lower()}
         return result['id'], result['name'].lower()
@@ -110,13 +110,13 @@ class Cloudflare(BaseAccount):
         mine = [rec for rec in records if (rec.get('comment') or '') in own]
         target = mine[0] if mine else None
         if target is None and len(records) == 1 and not managed(records[0].get('comment') or ''):
-            target = records[0]   # einzelner, bisher nicht verwalteter Record wird uebernommen
+            target = records[0]   # einzelner, bisher nicht verwalteter Record wird übernommen
         body = {'content': address, 'ttl': ttl, 'proxied': proxied, 'comment': tag}
         if target is not None:
             unchanged = (target.get('content') == address and bool(target.get('proxied')) == proxied
                          and int(target.get('ttl', 1)) == ttl and (target.get('comment') or '') == tag)
             if unchanged and not self.is_forced:
-                return 'unveraendert'
+                return 'unverändert'
             self._request('PATCH', '/zones/%s/dns_records/%s' % (zone_id, target['id']), body)
             return 'aktualisiert'
         body.update({'type': rtype, 'name': name})

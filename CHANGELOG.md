@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.2.0 – 2026-11-02
+
+- Redesigned overview pages: status bar with counters, routing state and legend; fewer, two-line columns;
+  nothing truncated anymore (IPs, messages, members); clean action bar
+- Settings page and dialogs aligned with the stock OPNsense look
+- Gateway per entry (automatic or explicit); automatic lookup also finds gateways that are not marked
+  as interface gateway
+- Test dialog shows the gateway used, all gateways on the interface and the matching route-to rule (tcp/udp)
+- Backend messages with proper German umlauts
+- Screenshots and preview tool (`tools/preview`)
+
 ## 2.1.0 – 2026-11-02
 
 - Renamed to **Multihome DynDNS** (package os-multihome-ddns, menu *Services › Multihome DynDNS*,

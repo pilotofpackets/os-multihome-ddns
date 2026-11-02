@@ -1,5 +1,5 @@
 """
-    Multihome DynDNS - Ablauf: pruefen, absichern, beim Anbieter aktualisieren
+    Multihome DynDNS - Ablauf: prüfen, absichern, beim Anbieter aktualisieren
 
     BSD 2-Clause License
 """
@@ -10,7 +10,7 @@ import time
 from .account import AccountFactory
 from .config import load_config, label
 from .detect import detect, policy_rule, FAMILIES, CLASS_LABEL
-from .failover import choose, gateway_status
+from .failover import choose, gateway_status, member_gateway
 from .log import Logger
 
 STATE_DIR = os.environ.get('MHDDNS_STATE_DIR', '/var/db/multihomeddns')
@@ -61,14 +61,14 @@ def provider_settings(account, cfg, log, force=False):
 
 
 def push(factory, settings, pstate, address, tag, log):
-    """ Adresse beim Anbieter eintragen, wenn noetig. Liefert (ergebnis, provider_state, fehler)
+    """ Adresse beim Anbieter eintragen, wenn nötig. Liefert (ergebnis, provider_state, fehler)
         ergebnis: unchanged | updated | error
     """
     settings['_address'] = address
     provider = factory.get(settings)
     if provider is None:
         module_err = factory.unavailable.get(settings['service'].replace('-', '_'), '')
-        return 'error', pstate, 'Anbieter "%s" nicht verfuegbar%s' % (
+        return 'error', pstate, 'Anbieter "%s" nicht verfügbar%s' % (
             settings['service'], (': %s' % module_err) if module_err else '')
     provider.state = pstate or {}
     provider._current_address = address
@@ -90,24 +90,26 @@ def push(factory, settings, pstate, address, tag, log):
 
 
 def check_policy_routing(detections, cfg, log):
-    """ Hinweis, wenn fuer ein per Dienst abgefragtes Interface keine route-to-Regel aktiv ist """
-    seen = set()
+    """ Hinweis, wenn für ein per Dienst abgefragtes Interface keine route-to-Regel aktiv ist """
+    seen = {}
     for _, info in detections:
         if info.get('method') in ('web', 'dns') and info.get('device'):
-            key = (info['device'], info['family'])
+            proto = 'udp' if info['method'] == 'dns' else 'tcp'
+            key = (info['device'], info['family'], proto)
             if key in seen:
+                info['policy_rule'] = seen[key]
                 continue
-            seen.add(key)
-            rule = policy_rule(info['device'], info['family'])
+            rule = policy_rule(info['device'], info['family'], proto)
+            seen[key] = rule
             info['policy_rule'] = rule
             if rule:
-                log.debug('Policy-Routing aktiv fuer %s %s: %s' % (info['device'], FAMILIES[info['family']], rule))
+                log.debug('Policy-Routing aktiv für %s %s: %s' % (info['device'], FAMILIES[info['family']], rule))
             elif cfg['policy_routing']:
-                log.warning('Keine route-to-Regel fuer %s (%s) aktiv - kein Gateway auf dem Interface gefunden '
+                log.warning('Keine route-to-Regel für %s (%s) aktiv - kein Gateway auf dem Interface gefunden '
                             'oder Einstellungen nicht angewendet. Die Abfrage folgt der Routing-Tabelle.'
                             % (info['interface_descr'], FAMILIES[info['family']]))
             else:
-                log.debug('Policy-Routing ist deaktiviert, Abfrage ueber %s folgt der Routing-Tabelle%s' % (
+                log.debug('Policy-Routing ist deaktiviert, Abfrage über %s folgt der Routing-Tabelle%s' % (
                     info['device'], ' (force gw ist aus!)' if cfg['force_gw_disabled'] else ''))
 
 
@@ -129,26 +131,26 @@ def flag_duplicates(detections, cfg, state, now, log):
                 names = sorted(cfg['interfaces'].get(n, {}).get('descr', n) for n in others)
                 info['conflict'] = True
                 info['blocked'] = True
-                info['error'] = ('%s ist auch Interface %s zugeordnet - die Abfrage lief vermutlich ueber das '
-                                 'falsche Gateway (Policy-Routing pruefen). Kein Update.' % (info['ip'], ', '.join(names)))
+                info['error'] = ('%s ist auch Interface %s zugeordnet - die Abfrage lief vermutlich über das '
+                                 'falsche Gateway (Policy-Routing prüfen). Kein Update.' % (info['ip'], ', '.join(names)))
 
 
 def _describe(info):
     if info['method'] == 'interface':
         return 'Interface-Adresse'
-    return '%s ueber %s' % (info['url'], info['local'])
+    return '%s über %s' % (info['url'], info['local'])
 
 
 def run(mode, uuids=None):
-    """ mode: cron (faellige), check (alle jetzt), force (Update erzwingen), failover (nur Failover bewerten) """
+    """ mode: cron (fällige), check (alle jetzt), force (Update erzwingen), failover (nur Failover bewerten) """
     started = time.time()
     cfg = load_config()
     log = Logger(cfg['loglevel'])
     if not cfg['enabled']:
-        log.debug('Dienst deaktiviert, %s uebersprungen' % mode)
+        log.debug('Dienst deaktiviert, %s übersprungen' % mode)
         return {'status': 'disabled'}
     selected = set(uuids or [])
-    log.info('Lauf gestartet: %s%s' % (mode, (' fuer %s' % ', '.join(sorted(selected))) if selected else ''))
+    log.info('Lauf gestartet: %s%s' % (mode, (' für %s' % ', '.join(sorted(selected))) if selected else ''))
     if cfg['force_gw_disabled']:
         log.debug('Hinweis: "Disable force gateway" ist gesetzt - das Plugin verwendet eigene route-to-Regeln')
 
@@ -161,13 +163,13 @@ def run(mode, uuids=None):
             continue
         if not account['enabled']:
             if selected:
-                log.info('%s: deaktiviert, uebersprungen' % label(account))
+                log.info('%s: deaktiviert, übersprungen' % label(account))
             continue
         entry = state['accounts'].setdefault(account['uuid'], {})
         if mode == 'cron':
             wait = account['interval'] * 60 - 15 - (now - entry.get('checked', 0))
             if wait > 0:
-                log.debug('%s: noch nicht faellig (naechste Pruefung in %ds)' % (label(account), wait))
+                log.debug('%s: noch nicht fällig (nächste Prüfung in %ds)' % (label(account), wait))
                 continue
         detections.append((account, detect(account, cfg, log)))
 
@@ -177,7 +179,7 @@ def run(mode, uuids=None):
 
     factory = AccountFactory()
     if factory.unavailable:
-        log.debug('Nicht verfuegbare Anbieter-Module: %s' % factory.unavailable)
+        log.debug('Nicht verfügbare Anbieter-Module: %s' % factory.unavailable)
 
     counts = {'checked': 0, 'updated': 0, 'unchanged': 0, 'blocked': 0, 'error': 0, 'switched': 0}
     for account, info in detections:
@@ -210,24 +212,24 @@ def run(mode, uuids=None):
             entry['written'] = info['ip']
         elif result == 'unchanged':
             entry['written'] = pstate.get('ip')
-            log.info('%s: %s via %s - unveraendert' % (tag, info['ip'], _describe(info)))
+            log.info('%s: %s via %s - unverändert' % (tag, info['ip'], _describe(info)))
         else:
             log.error('%s: %s' % (tag, err))
         counts[{'updated': 'updated', 'unchanged': 'unchanged'}.get(result, 'error')] += 1
 
-    # Failover-Eintraege bei jedem Lauf bewerten (Gateway-Status aendert sich unabhaengig vom Intervall)
+    # Failover-Einträge bei jedem Lauf bewerten (Gateway-Status ändert sich unabhängig vom Intervall)
     run_failovers(cfg, state, now, log, factory, mode, selected, counts)
 
     for uuid in list(state['accounts']):
         if uuid not in known:
             del state['accounts'][uuid]
-            log.debug('Status des geloeschten Eintrags %s entfernt' % uuid)
+            log.debug('Status des gelöschten Eintrags %s entfernt' % uuid)
     known_fo = {fo['uuid'] for fo in cfg['failovers']}
     for uuid in list(state.get('failovers', {})):
         if uuid not in known_fo:
             del state['failovers'][uuid]
     save_state(state)
-    log.info('Lauf beendet (%s): %d geprueft, %d aktualisiert, %d unveraendert, %d blockiert, %d Fehler, '
+    log.info('Lauf beendet (%s): %d geprüft, %d aktualisiert, %d unverändert, %d blockiert, %d Fehler, '
              '%d Failover-Wechsel, %.1fs' % (mode, counts['checked'], counts['updated'], counts['unchanged'],
                                             counts['blocked'], counts['error'], counts['switched'], time.time() - started))
     return {'status': 'ok', 'counts': counts}
@@ -268,7 +270,7 @@ def run_failovers(cfg, state, now, log, factory, mode, selected, counts):
             counts['updated'] += 1
         elif result == 'unchanged':
             fstate['written'] = pstate.get('ip')
-            log.info('%s: zeigt auf %s (%s) - unveraendert' % (tag, member['name'], member['ip']))
+            log.info('%s: zeigt auf %s (%s) - unverändert' % (tag, member['name'], member['ip']))
         if err:
             fstate['status'] = 'error'
             fstate['error'] = err
@@ -277,7 +279,7 @@ def run_failovers(cfg, state, now, log, factory, mode, selected, counts):
 
 
 def reset_failover(uuid):
-    """ aktives Mitglied verwerfen, damit beim naechsten Lauf neu (bevorzugt) gewaehlt wird """
+    """ aktives Mitglied verwerfen, damit beim nächsten Lauf neu (bevorzugt) gewählt wird """
     cfg = load_config()
     log = Logger(cfg['loglevel'])
     state = load_state()
@@ -286,7 +288,7 @@ def reset_failover(uuid):
         fstate.pop('active', None)
         fstate['healthy_since'] = {}
         save_state(state)
-        log.notice('Failover %s: manuell zurueckgesetzt, wird neu bewertet' % uuid)
+        log.notice('Failover %s: manuell zurückgesetzt, wird neu bewertet' % uuid)
     return run('failover')
 
 
@@ -366,7 +368,7 @@ def test(uuid):
     log = Logger(cfg['loglevel'])
     for account in cfg['accounts']:
         if account['uuid'] == uuid:
-            log.info('Test fuer %s gestartet (ohne Update)' % label(account))
+            log.info('Test für %s gestartet (ohne Update)' % label(account))
             detections = [(account, detect(account, cfg, log))]
             check_policy_routing(detections, cfg, log)
             if cfg['duplicate_guard']:
@@ -374,8 +376,18 @@ def test(uuid):
             info = detections[0][1]
             info['family'] = FAMILIES[info['family']]
             info['policy_routing_enabled'] = cfg['policy_routing']
+            gateways = gateway_status(log)
+            proto = 'inet6' if account['ipversion'] == 'v6' else 'inet'
+            chosen = member_gateway(account, gateways)
+            info['gateway_mode'] = 'manuell' if account['gateway'] else 'automatisch'
+            info['gateway_chosen'] = chosen['name'] if chosen else None
+            info['gateways'] = [
+                {'name': gw['name'], 'address': gw.get('gateway') or '', 'status': gw.get('status'),
+                 'upstream': gw.get('upstream'), 'priority': gw.get('priority'), 'disabled': gw.get('disabled')}
+                for gw in gateways.values() if gw.get('interface') == account['interface'] and gw.get('ipprotocol') == proto
+            ]
             info['force_gw_disabled'] = cfg['force_gw_disabled']
-            log.info('Test fuer %s: %s' % (label(account), info.get('error') or '%s via %s' % (info['ip'], _describe(info))))
+            log.info('Test für %s: %s' % (label(account), info.get('error') or '%s via %s' % (info['ip'], _describe(info))))
             return {'uuid': uuid, 'description': label(account), 'service': account['service'], 'result': info}
     return {'error': 'Eintrag nicht gefunden'}
 

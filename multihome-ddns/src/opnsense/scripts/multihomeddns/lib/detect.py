@@ -1,10 +1,10 @@
 """
-    Multihome DynDNS - Ermittlung der oeffentlichen Adresse pro Interface
+    Multihome DynDNS - Ermittlung der öffentlichen Adresse pro Interface
 
-    Die Liste der Pruefdienste entspricht der des os-ddclient-Plugins
+    Die Liste der Prüfdienste entspricht der des os-ddclient-Plugins
     (dns/ddclient/.../lib/address.py, Copyright (c) 2022-2025 Ad Schellevis).
-    Anders als dort wird jede Abfrage mit der Adresse des gewaehlten Interfaces
-    als Quelle gesendet und per route-to-Regel ueber dessen Gateway geroutet.
+    Anders als dort wird jede Abfrage mit der Adresse des gewählten Interfaces
+    als Quelle gesendet und per route-to-Regel über dessen Gateway geroutet.
 
     BSD 2-Clause License
 """
@@ -23,7 +23,7 @@ USER_AGENT = 'OPNsense-multihome-ddns/2.0'
 
 FAMILIES = {'v4': 'IPv4', 'v6': 'IPv6'}
 
-# identisch zu os-ddclient (Schluessel mit "_" statt "-"/".")
+# identisch zu os-ddclient (Schlüssel mit "_" statt "-"/".")
 CHECKIP_WEB = {
     'akamai': '%s://whatismyip.akamai.com',
     'akamai_ipv4': '%s://ipv4.whatismyip.akamai.com',
@@ -61,7 +61,7 @@ CGNAT = ipaddress.ip_network('100.64.0.0/10')                      # RFC 6598
 RFC1918 = [ipaddress.ip_network(n) for n in ('10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16')]
 ULA = ipaddress.ip_network('fc00::/7')                             # RFC 4193
 CLASS_LABEL = {
-    'public': 'oeffentlich',
+    'public': 'öffentlich',
     'private': 'privat (RFC 1918 / RFC 4193)',
     'cgnat': 'CGNAT (RFC 6598)',
     'reserved': 'reserviert (RFC 6890)',
@@ -86,7 +86,7 @@ def classify(addr):
 
 
 def interface_addresses(device):
-    """ IPv4: primaere Adressen ohne CARP-VIPs; IPv6: global vor ULA, ohne temporary/deprecated/link-local """
+    """ IPv4: primäre Adressen ohne CARP-VIPs; IPv6: global vor ULA, ohne temporary/deprecated/link-local """
     proc = subprocess.run([IFCONFIG, device], capture_output=True, text=True)
     if proc.returncode != 0:
         raise DetectError('Interface %s existiert nicht oder ist nicht aktiv' % device)
@@ -155,11 +155,11 @@ def web_check(url, source, fam, timeout, log):
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout + 5)
     except subprocess.TimeoutExpired:
-        raise DetectError('Zeitueberschreitung bei %s (Quelle %s)' % (url, source))
+        raise DetectError('Zeitüberschreitung bei %s (Quelle %s)' % (url, source))
     log.debug('Antwort (exit %d): %s %s' % (proc.returncode, shorten(proc.stdout), shorten(proc.stderr)))
     if proc.returncode != 0:
         reason = proc.stderr.strip() or 'curl exit %d' % proc.returncode
-        raise DetectError('Abfrage von %s ueber %s fehlgeschlagen: %s' % (url, source, reason))
+        raise DetectError('Abfrage von %s über %s fehlgeschlagen: %s' % (url, source, reason))
     return parse_address(proc.stdout, fam, url)
 
 
@@ -200,7 +200,7 @@ def dns_check(service, source, fam, timeout, log):
 def service_url(account):
     if account['checkip_service'] == 'custom':
         if not account['custom_url']:
-            raise DetectError('Keine eigene URL fuer den IP-Check konfiguriert')
+            raise DetectError('Keine eigene URL für den IP-Check konfiguriert')
         return account['custom_url']
     template = CHECKIP_WEB.get(account['checkip_service'], CHECKIP_WEB['cloudflare'])
     return template % ('https' if account['force_ssl'] else 'http')
@@ -209,8 +209,10 @@ def service_url(account):
 _pf_rules = None
 
 
-def policy_rule(device, fam):
-    """ aktive route-to-Regel fuer Verkehr mit der Quelladresse dieses Interfaces (oder None) """
+def policy_rule(device, fam, proto='tcp'):
+    """ aktive route-to-Regel für Verkehr mit der Quelladresse dieses Interfaces (oder None)
+        proto: tcp für Web-Prüfdienste, udp für die DNS-Abfrage
+    """
     global _pf_rules
     if _pf_rules is None:
         try:
@@ -220,13 +222,13 @@ def policy_rule(device, fam):
     inet = 'inet6' if fam == 'v6' else 'inet'
     for line in _pf_rules.splitlines():
         if ('route-to' in line and 'from (%s)' % device in line and ' %s ' % inet in line
-                and line.startswith('pass out quick')):
+                and ' proto %s ' % proto in line and 'pass' in line.split('route-to')[0]):
             return ' '.join(line.split())
     return None
 
 
 def detect(account, cfg, log):
-    """ Adresse fuer einen Eintrag ermitteln. Liefert immer ein dict, Fehler in info['error'] """
+    """ Adresse für einen Eintrag ermitteln. Liefert immer ein dict, Fehler in info['error'] """
     fam = account['ipversion']
     ifinfo = cfg['interfaces'].get(account['interface'])
     info = {
@@ -256,9 +258,9 @@ def detect(account, cfg, log):
         info['behind_nat'] = info['local_class'] == 'private'
         if info['cgnat']:
             log.warning('%s: Interface-Adresse %s liegt im CGNAT-Bereich (RFC 6598) - der Anschluss ist von '
-                        'aussen ueber IPv4 nicht erreichbar' % (tag, local))
+                        'aussen über IPv4 nicht erreichbar' % (tag, local))
         elif info['behind_nat']:
-            log.debug('%s: Interface-Adresse %s ist privat - Router/NAT davor, oeffentliche IP per Dienst' % (tag, local))
+            log.debug('%s: Interface-Adresse %s ist privat - Router/NAT davor, öffentliche IP per Dienst' % (tag, local))
 
         method = account['checkip']
         if method == 'interface' or (method == 'auto' and info['local_class'] == 'public'):
@@ -266,7 +268,7 @@ def detect(account, cfg, log):
             addr = transform_ip(local, account['dynipv6host'])
         else:
             if fam == 'v6' and info['local_class'] != 'public':
-                raise DetectError('%s hat keine globale IPv6-Adresse fuer die Abfrage' % info['interface_descr'])
+                raise DetectError('%s hat keine globale IPv6-Adresse für die Abfrage' % info['interface_descr'])
             if account['checkip_service'] in CHECKIP_DNS:
                 info['method'] = 'dns'
                 info['url'] = 'dns://%s/%s' % (CHECKIP_DNS[account['checkip_service']]['nameservers'][fam][0],

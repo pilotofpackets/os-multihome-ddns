@@ -50,6 +50,12 @@
         <type>checkbox</type>
     </field>
     <field>
+        <id>account.gateway</id>
+        <label>Gateway für Prüfabfrage</label>
+        <type>dropdown</type>
+        <help>Über dieses Gateway läuft die Abfrage des Prüfdienstes (route-to-Regel). "Automatisch" nimmt das Gateway des gewählten Interfaces; hier nur ein bestimmtes wählen, wenn die Erkennung nicht passt oder mehrere Gateways auf dem Interface liegen. Wird auch für den Gateway-Status im Failover verwendet.</help>
+    </field>
+    <field>
         <id>account.dynipv6host</id>
         <label>IPv6-Host-Teil</label>
         <type>text</type>

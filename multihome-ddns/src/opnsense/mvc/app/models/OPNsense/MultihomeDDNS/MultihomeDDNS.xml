@@ -1,6 +1,6 @@
 <model>
     <mount>//OPNsense/MultihomeDDNS</mount>
-    <version>2.0.0</version>
+    <version>2.2.0</version>
     <description>Multihome DynDNS (per interface, failover)</description>
     <items>
         <general>
@@ -115,6 +115,10 @@
                     <Mask>/^::(([0-9a-fA-F]{1,4}:){0,3}[0-9a-fA-F]{1,4})?$/u</Mask>
                     <ValidationMessage>Ungültiger Host-Teil (z.B. ::1000).</ValidationMessage>
                 </dynipv6host>
+                <gateway type=".\GatewayField">
+                    <Required>N</Required>
+                    <BlankDesc>Automatisch (Gateway des Interfaces)</BlankDesc>
+                </gateway>
                 <interval type="IntegerField">
                     <Default>5</Default>
                     <Required>Y</Required>

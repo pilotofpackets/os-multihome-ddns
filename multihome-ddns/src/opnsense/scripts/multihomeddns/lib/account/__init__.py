@@ -2,9 +2,9 @@
     Copyright (c) 2022 Ad Schellevis <ad@opnsense.org>
     All rights reserved.
 
-    Angepasst fuer Multihome DynDNS: die Adresse wird nicht mehr hier per checkip
+    Angepasst für Multihome DynDNS: die Adresse wird nicht mehr hier per checkip
     ermittelt, sondern vom Runner pro Interface bestimmt und als "_address"
-    uebergeben. Die Anbieter-Module aus os-ddclient laufen dadurch unveraendert.
+    übergeben. Die Anbieter-Module aus os-ddclient laufen dadurch unverändert.
 
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met:
@@ -35,7 +35,7 @@ import sys
 import time
 import uuid
 
-# Felder, die keine Neuuebertragung ausloesen sollen
+# Felder, die keine Neuübertragung auslösen sollen
 _HASH_EXCLUDE = ('id', 'description', 'verbose', 'force_ssl')
 
 
@@ -117,22 +117,22 @@ class BaseAccount:
         return self._account.get('_force') is True
 
     def needs_update(self):
-        """ Grund fuer eine Uebertragung oder None """
+        """ Grund für eine Uebertragung oder None """
         if self.is_forced:
             return 'erzwungen'
         if self._state.get('ip') is None:
-            return 'noch nie uebertragen'
+            return 'noch nie übertragen'
         if self._current_address != self._state.get('ip'):
-            return 'Adresse geaendert (%s -> %s)' % (self._state.get('ip'), self._current_address)
+            return 'Adresse geändert (%s -> %s)' % (self._state.get('ip'), self._current_address)
         if self._state.get('md5') != self.md5:
-            return 'Einstellungen geaendert'
+            return 'Einstellungen geändert'
         resync = self._account.get('_resync', 0)
         if resync and time.time() - self.mtime > resync:
             return 'periodischer Abgleich'
         return None
 
     def execute(self):
-        """ True, wenn der Anbieter aktualisiert werden soll (Unterklassen fuehren das Update dann aus) """
+        """ True, wenn der Anbieter aktualisiert werden soll (Unterklassen führen das Update dann aus) """
         self._current_address = self._account.get('_address')
         if not self._current_address:
             return False
@@ -140,7 +140,7 @@ class BaseAccount:
 
 
 class AccountFactory:
-    """ Laedt alle Anbieter-Module; Module mit fehlenden Abhaengigkeiten (z.B. boto3) werden gemerkt """
+    """ Lädt alle Anbieter-Module; Module mit fehlenden Abhängigkeiten (z.B. boto3) werden gemerkt """
 
     def __init__(self):
         self.unavailable = {}

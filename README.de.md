@@ -50,7 +50,14 @@ Diese fehlen in drei Fällen:
   - Sofortiger Failover bei Gateway-Alarm.
 - **Force-Update:** pro Eintrag, für ausgewählte oder für alle.
 - **Vollständiges Logging:** fünf Stufen bis Debug, eigenes Log.
-- **Test-Knopf:** zeigt erkannte Adresse, Adressklasse, Methode und Policy-Regel, ohne zu schreiben.
+- **Gateway pro Eintrag:** automatisch oder ausdrücklich gewählt – für die route-to-Regel und die Failover-Bewertung.
+- **Test-Knopf:** zeigt erkannte Adresse, Adressklasse, Methode, Gateway und aktive Policy-Regel, ohne zu schreiben.
+
+## Ansicht
+
+![Einträge](docs/screenshots/index_desktop.png)
+
+Weitere Screenshots (Failover, Test-Dialog) im [englischen README](README.md#screenshots).
 
 ## Installation
 

@@ -4,9 +4,9 @@
     Stufen (general.loglevel):
         error    nur Fehler
         warning  Fehler und Warnungen (z.B. CGNAT, private Adressen, Routing-Hinweise)
-        notice   zusaetzlich Aenderungen und Updates beim Anbieter
-        info     zusaetzlich jede einzelne Pruefung mit Ergebnis (Standard)
-        debug    zusaetzlich Details: Adressen, Abfragen, Antworten, Entscheidungen, API-Aufrufe
+        notice   zusätzlich Aenderungen und Updates beim Anbieter
+        info     zusätzlich jede einzelne Prüfung mit Ergebnis (Standard)
+        debug    zusätzlich Details: Adressen, Abfragen, Antworten, Entscheidungen, API-Aufrufe
 
     Alles landet per syslog (Programmname "multihomeddns") in
     /var/log/multihomeddns/ und ist in der GUI unter Log File sichtbar.

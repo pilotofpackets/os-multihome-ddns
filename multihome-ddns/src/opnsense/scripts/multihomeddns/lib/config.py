@@ -68,6 +68,7 @@ def load_config():
                 'custom_url': txt('custom_url'),
                 'force_ssl': txt('force_ssl', '1') == '1',
                 'dynipv6host': txt('dynipv6host'),
+                'gateway': txt('gateway'),
                 'interval': max(1, _int(txt('interval', '5'), 5)),
                 **provider_fields(txt),
             })

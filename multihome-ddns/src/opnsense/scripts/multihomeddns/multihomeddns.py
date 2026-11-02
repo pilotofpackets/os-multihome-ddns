@@ -1,16 +1,16 @@
 #!/usr/local/bin/python3
 """
-    Multihome DynDNS fuer OPNsense
+    Multihome DynDNS für OPNsense
 
     Aufruf:
-        multihomeddns.py cron                 faellige Eintraege pruefen + Failover bewerten (minuetlich per Cron)
-        multihomeddns.py check [uuid,...]     sofort pruefen, bei Aenderung aktualisieren
-        multihomeddns.py force [uuid,...]     sofort pruefen und Update beim Anbieter erzwingen
-        multihomeddns.py failover             nur Failover-Eintraege bewerten (Gateway-Alarm)
-        multihomeddns.py reset <uuid>         Failover neu bewerten (z.B. manuelles Zurueckschalten)
+        multihomeddns.py cron                 fällige Einträge prüfen + Failover bewerten (minütlich per Cron)
+        multihomeddns.py check [uuid,...]     sofort prüfen, bei Aenderung aktualisieren
+        multihomeddns.py force [uuid,...]     sofort prüfen und Update beim Anbieter erzwingen
+        multihomeddns.py failover             nur Failover-Einträge bewerten (Gateway-Alarm)
+        multihomeddns.py reset <uuid>         Failover neu bewerten (z.B. manuelles Zurückschalten)
         multihomeddns.py status               Status als JSON
         multihomeddns.py test <uuid>          IP-Ermittlung testen, ohne zu schreiben
-        multihomeddns.py services             verfuegbare Anbieter
+        multihomeddns.py services             verfügbare Anbieter
         multihomeddns.py applied              Hinweis "Einstellungen angewendet" ins Log, danach check
 
     BSD 2-Clause License

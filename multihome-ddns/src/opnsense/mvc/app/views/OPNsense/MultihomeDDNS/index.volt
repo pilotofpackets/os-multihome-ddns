@@ -32,14 +32,21 @@
                 } else {
                     const rows = [
                         ["{{ lang._('Interface') }}", mwEsc(r.interface_descr) + ' (' + mwEsc(r.device) + '), ' + mwEsc(r.family)],
-                        ["{{ lang._('Interface-Adresse') }}", r.local ? '<span class="mhddns-ip">' + mwEsc(r.local) + '</span> ' + mwClassBadge(r.local_class) : '-'],
+                        ["{{ lang._('Interface-Adresse') }}", r.local ? mwIp(r.local) + ' ' + mwClassBadge(r.local_class) : '–'],
                         ["{{ lang._('Methode') }}", mwEsc(r.method || '-') + (r.url ? ' – ' + mwEsc(r.url) : '')],
-                        ["{{ lang._('Ermittelte Adresse') }}", r.ip ? '<strong class="mhddns-ip">' + mwEsc(r.ip) + '</strong> ' + mwClassBadge(r.ip_class) : '-'],
+                        ["{{ lang._('Ermittelte Adresse') }}", r.ip ? mwIp(r.ip, true) + ' ' + mwClassBadge(r.ip_class) : '–'],
                         ["{{ lang._('Policy-Routing') }}", r.method === 'interface' ? "{{ lang._('nicht nötig (Interface-Adresse)') }}" :
-                            (r.policy_rule ? mwBadge('label-success', "{{ lang._('aktiv') }}") + '<br/><small class="mhddns-ip">' + mwEsc(r.policy_rule) + '</small>'
+                            (r.policy_rule ? mwBadge('label-success', "{{ lang._('aktiv') }}") + '<br/><code class="mhddns-rule">' + mwEsc(r.policy_rule) + '</code>'
                                 : mwBadge('label-danger', "{{ lang._('keine Regel aktiv') }}") + ' <small>' + (r.policy_routing_enabled
                                     ? "{{ lang._('kein Gateway auf dem Interface gefunden oder Einstellungen nicht angewendet') }}"
                                     : "{{ lang._('in den Einstellungen deaktiviert') }}") + '</small>')],
+                        ["{{ lang._('Gateway') }}", (r.gateway_chosen ? '<strong>' + mwEsc(r.gateway_chosen) + '</strong> <small class="text-muted">(' +
+                            mwEsc(r.gateway_mode) + ')</small>' : '<span class="text-danger">' + "{{ lang._('kein Gateway auf diesem Interface – unter System › Gateways anlegen oder im Eintrag wählen') }}" + '</span>') +
+                            ((r.gateways || []).length ? '<br/><small class="text-muted">' + "{{ lang._('Gateways auf dem Interface:') }}" + ' ' +
+                                r.gateways.map(function (g) {
+                                    return mwEsc(g.name) + (g.address ? ' ' + mwEsc(g.address) : '') + ' – ' + $('<div/>').html(mwGwStatus(g.status)).text().trim() +
+                                        (g.disabled ? ' (' + "{{ lang._('deaktiviert') }}" + ')' : '');
+                                }).join(', ') + '</small>' : '')],
                         ["{{ lang._('Disable force gateway') }}", r.force_gw_disabled ? "{{ lang._('gesetzt – wird durch die eigenen Regeln abgedeckt') }}" : "{{ lang._('nicht gesetzt') }}"]
                     ];
                     if (r.cgnat) {
@@ -52,12 +59,14 @@
                     } else {
                         rows.push(["{{ lang._('Ergebnis') }}", '<span class="text-success">' + "{{ lang._('würde geschrieben') }}" + '</span>']);
                     }
-                    html = '<p><strong>' + mwEsc(data.description) + '</strong> → ' + mwEsc(data.service) + '</p><table class="table table-condensed">' +
-                        rows.map(function (row) { return '<tr><td style="width:30%">' + row[0] + '</td><td>' + row[1] + '</td></tr>'; }).join('') +
+                    html = '<p><strong>' + mwEsc(data.description) + '</strong> → ' + mwEsc(data.service) + '</p><table class="table table-condensed mhddns-testtable">' +
+                        '<colgroup><col style="width: 28%"/><col/></colgroup>' +
+                        rows.map(function (row) { return '<tr><td>' + row[0] + '</td><td>' + row[1] + '</td></tr>'; }).join('') +
                         '</table><small class="text-muted">' + "{{ lang._('Test ohne Schreiben – Ergebnis steht auch im Log.') }}" + '</small>';
                 }
                 BootstrapDialog.show({
                     type: (r && !r.error) ? BootstrapDialog.TYPE_SUCCESS : BootstrapDialog.TYPE_WARNING,
+                    size: BootstrapDialog.SIZE_WIDE,
                     title: "{{ lang._('Test der IP-Ermittlung') }}",
                     message: html,
                     buttons: [{label: "{{ lang._('Schließen') }}", action: function (d) { d.close(); }}]
@@ -73,40 +82,70 @@
             del: '/api/multihomeddns/settings/delAccount/',
             toggle: '/api/multihomeddns/settings/toggleAccount/',
             options: {
-                formatters: {
-                    local: function (column, row) {
-                        if (!row.rt_local) {
-                            return '-';
+                responseHandler: function (response) {
+                    const count = {ok: 0, blocked: 0, error: 0, disabled: 0, cgnat: 0};
+                    (response.rows || []).forEach(function (row) {
+                        if (row.enabled !== '1') {
+                            count.disabled++;
+                        } else if (count[row.rt_status] !== undefined) {
+                            count[row.rt_status]++;
                         }
-                        return '<span class="mhddns-ip">' + mwEsc(row.rt_local) + '</span> ' + mwClassBadge(row.rt_local_class);
+                        if (row.enabled === '1' && row.rt_cgnat) {
+                            count.cgnat++;
+                        }
+                    });
+                    mwStat('stat_ok', count.ok, "{{ lang._('aktuell') }}", 'text-success');
+                    mwStat('stat_blocked', count.blocked, "{{ lang._('blockiert') }}", 'text-warning');
+                    mwStat('stat_error', count.error, "{{ lang._('Fehler') }}", 'text-danger');
+                    mwStat('stat_cgnat', count.cgnat, "{{ lang._('hinter CGNAT') }}", 'text-warning');
+                    mwStat('stat_disabled', count.disabled, "{{ lang._('deaktiviert') }}", 'text-muted');
+                    return response;
+                },
+                formatters: {
+                    entry: function (column, row) {
+                        const sub = mwEsc(row.interface) + (row.rt_device ? ' (' + mwEsc(row.rt_device) + ')' : '') +
+                            ' · ' + mwEsc(row.ipversion);
+                        let html = '<strong>' + mwEsc(row.description) + '</strong>' + mwSub(sub);
+                        if (row.rt_local) {
+                            html += mwSub("{{ lang._('Interface:') }} " + mwIp(row.rt_local) + ' ' + mwClassBadge(row.rt_local_class));
+                        }
+                        return mwCell(html);
+                    },
+                    dns: function (column, row) {
+                        return mwCell(mwEsc(row.service) + mwSub(mwEsc((row.hostnames || '').split(',').join(', '))));
                     },
                     publicip: function (column, row) {
                         if (!row.rt_detected) {
-                            return '-';
+                            return mwCell('<span class="text-muted">–</span>');
                         }
-                        let html = '<span class="mhddns-ip"><strong>' + mwEsc(row.rt_detected) + '</strong></span> ' + mwClassBadge(row.rt_ip_class);
-                        if (row.rt_cgnat) {
-                            html += mwBadge('label-warning', 'CGNAT', MHDDNS_CLASS['cgnat'][2]);
-                        }
+                        const via = row.rt_method === 'interface' ? "{{ lang._('vom Interface') }}"
+                            : (row.rt_url || '').replace(/^https?:\/\//, '').replace(/\/$/, '');
+                        let sub = mwClassBadge(row.rt_ip_class) + mwEsc(via);
                         if (row.rt_written && row.rt_written !== row.rt_detected) {
-                            html += '<br/><small class="text-muted">' + "{{ lang._('im DNS:') }}" + ' ' + mwEsc(row.rt_written) + '</small>';
+                            sub += '<br/>' + "{{ lang._('im DNS:') }}" + ' ' + mwEsc(row.rt_written);
                         }
-                        const via = row.rt_method === 'interface' ? "{{ lang._('Interface') }}" : (row.rt_url || '');
-                        return html + (via ? '<br/><small class="text-muted">' + mwEsc(via) + '</small>' : '');
+                        return mwCell(mwIp(row.rt_detected, true) + mwSub(sub));
                     },
                     state: function (column, row) {
                         let html = mwStatusBadge(row.enabled === '1' ? row.rt_status : 'disabled', row.rt_error);
-                        if (row.rt_cgnat) {
-                            html += mwBadge('label-warning', "{{ lang._('CGNAT – nicht erreichbar') }}", MHDDNS_CLASS['cgnat'][2]);
+                        if (row.enabled === '1' && row.rt_cgnat) {
+                            html += mwBadge('label-warning', 'CGNAT', MHDDNS_CLASS['cgnat'][2]);
+                        } else if (row.enabled === '1' && row.rt_behind_nat) {
+                            html += mwBadge('label-default', "{{ lang._('hinter Router') }}",
+                                "{{ lang._('Private Interface-Adresse: öffentliche IP wird über den Prüfdienst ermittelt') }}");
                         }
-                        if (row.rt_error) {
-                            html += '<br/><small class="' + (row.rt_status === 'blocked' ? 'text-warning' : 'text-danger') + '">' + mwEsc(row.rt_error) + '</small>';
+                        if (row.enabled === '1' && row.rt_error) {
+                            html += mwMsg(row.rt_error, row.rt_status === 'blocked' ? 'warn' : 'err');
                         }
-                        return html;
+                        return mwCell(html);
                     },
                     checked: function (column, row) {
-                        return mwAgo(row.rt_checked) + (row.rt_updated ? '<br/><small class="text-muted">' +
-                            "{{ lang._('geschrieben') }} " + mwAgo(row.rt_updated) + '</small>' : '');
+                        if (row.enabled !== '1') {
+                            return mwCell('<span class="text-muted">' + "{{ lang._('alle') }} " + mwEsc(row.interval) + ' min</span>');
+                        }
+                        return mwCell(mwAgo(row.rt_checked) + ' <span class="text-muted">· ' + "{{ lang._('alle') }} " +
+                            mwEsc(row.interval) + ' min</span>' + (row.rt_updated ? mwSub("{{ lang._('geschrieben') }} " +
+                            mwAgo(row.rt_updated)) : mwSub("{{ lang._('noch nicht geschrieben') }}")));
                     }
                 }
             },
@@ -145,6 +184,9 @@
             }
         });
 
+        $("#mhddnsLegend").html(mwLegend());
+        mwRoutingInfo('#mhddnsRouting');
+
         $("#account\\.checkip, #account\\.checkip_service").change(function () {
             const checkip = $("#account\\.checkip").val();
             const svc = $("#account\\.checkip_service").val();
@@ -170,7 +212,10 @@
         $("#reconfigureAct").SimpleActionButton({
             onAction: function () {
                 $("#mhddnsChangeMessage").hide();
-                setTimeout(function () { $('#grid-accounts').bootgrid('reload'); }, 4000);
+                setTimeout(function () {
+                    $('#grid-accounts').bootgrid('reload');
+                    mwRoutingInfo('#mhddnsRouting');
+                }, 4000);
             }
         });
 
@@ -184,22 +229,32 @@
 </script>
 
 <div class="content-box">
+    <div class="mhddns-summary">
+        <div class="mhddns-stat" id="stat_ok"></div>
+        <div class="mhddns-stat" id="stat_blocked"></div>
+        <div class="mhddns-stat" id="stat_error"></div>
+        <div class="mhddns-stat" id="stat_cgnat"></div>
+        <div class="mhddns-stat" id="stat_disabled"></div>
+        <div class="mhddns-summary-info">
+            <div id="mhddnsRouting"></div>
+            <div id="mhddnsLegend"></div>
+        </div>
+    </div>
     <table id="grid-accounts" class="table table-condensed table-hover table-striped table-responsive"
            data-editDialog="DialogAccount" data-editAlert="mhddnsChangeMessage">
         <thead>
         <tr>
             <th data-column-id="uuid" data-type="string" data-identifier="true" data-visible="false">ID</th>
             <th data-column-id="enabled" data-width="6em" data-type="string" data-formatter="rowtoggle">{{ lang._('Aktiv') }}</th>
-            <th data-column-id="description" data-type="string">{{ lang._('Beschreibung') }}</th>
-            <th data-column-id="interface" data-type="string">{{ lang._('Interface') }}</th>
-            <th data-column-id="ipversion" data-type="string" data-width="5em">{{ lang._('IP') }}</th>
-            <th data-column-id="service" data-type="string">{{ lang._('Anbieter') }}</th>
-            <th data-column-id="hostnames" data-type="string">{{ lang._('Hostnamen') }}</th>
-            <th data-column-id="rt_local" data-formatter="local" data-sortable="false">{{ lang._('Interface-Adresse') }}</th>
+            <th data-column-id="description" data-type="string" data-formatter="entry">{{ lang._('Anschluss') }}</th>
+            <th data-column-id="interface" data-type="string" data-visible="false">{{ lang._('Interface') }}</th>
+            <th data-column-id="ipversion" data-type="string" data-visible="false">{{ lang._('IP-Version') }}</th>
+            <th data-column-id="service" data-type="string" data-formatter="dns">{{ lang._('DNS') }}</th>
+            <th data-column-id="hostnames" data-type="string" data-visible="false">{{ lang._('Hostnamen') }}</th>
             <th data-column-id="rt_detected" data-formatter="publicip" data-sortable="false">{{ lang._('Öffentliche IP') }}</th>
             <th data-column-id="rt_status" data-formatter="state" data-sortable="false">{{ lang._('Status') }}</th>
-            <th data-column-id="rt_checked" data-formatter="checked" data-sortable="false">{{ lang._('Geprüft') }}</th>
-            <th data-column-id="commands" data-width="10em" data-formatter="commands" data-sortable="false">{{ lang._('Aktionen') }}</th>
+            <th data-column-id="rt_checked" data-formatter="checked" data-sortable="false" data-width="11em">{{ lang._('Geprüft') }}</th>
+            <th data-column-id="commands" data-width="10.5em" data-formatter="commands" data-sortable="false">{{ lang._('Aktionen') }}</th>
         </tr>
         </thead>
         <tbody></tbody>
@@ -213,34 +268,26 @@
         </tr>
         </tfoot>
     </table>
-    <div class="col-md-12 mhddns-legend">
-        <small>
-            <span class="label label-success">{{ lang._('öffentlich') }}</span>
-            <span class="label label-danger">{{ lang._('privat') }}</span>{{ lang._('RFC 1918 / 4193') }} &nbsp;
-            <span class="label label-warning">CGNAT</span>{{ lang._('RFC 6598') }} &nbsp;
-            <span class="label label-danger">{{ lang._('reserviert') }}</span>{{ lang._('RFC 6890') }} &nbsp;–&nbsp;
-            {{ lang._('Nur öffentliche Adressen werden geschrieben. Die Ansicht aktualisiert sich alle 30 Sekunden.') }}
-        </small>
-    </div>
 </div>
 
-<section class="page-content-main">
-    <div class="content-box">
-        <div class="col-md-12">
-            <br/>
-            <div id="mhddnsChangeMessage" class="alert alert-info" style="display: none" role="alert">
-                {{ lang._('Änderungen bitte mit "Anwenden" übernehmen (lädt die Policy-Routing-Regeln und den Zeitplan neu).') }}
-            </div>
-            <button class="btn btn-primary" id="reconfigureAct"
-                    data-endpoint="/api/multihomeddns/service/reconfigure"
-                    data-label="{{ lang._('Anwenden') }}"
-                    data-error-title="{{ lang._('Fehler beim Anwenden') }}"
-                    type="button"></button>
-            <button class="btn btn-default" id="checkAll" type="button"><i class="fa fa-search fa-fw"></i> {{ lang._('Alle jetzt prüfen') }}</button>
-            <button class="btn btn-default" id="forceAll" type="button"><i class="fa fa-refresh fa-fw"></i> {{ lang._('Force-Update alle') }}</button>
-            <br/><br/>
+<div class="content-box" style="margin-top: 15px;">
+    <div class="mhddns-actions">
+        <div id="mhddnsChangeMessage" class="alert alert-info" style="display: none" role="alert">
+            {{ lang._('Änderungen bitte mit „Anwenden“ übernehmen – lädt die Policy-Routing-Regeln und den Zeitplan neu.') }}
         </div>
+        <button class="btn btn-primary" id="reconfigureAct"
+                data-endpoint="/api/multihomeddns/service/reconfigure"
+                data-label="{{ lang._('Anwenden') }}"
+                data-error-title="{{ lang._('Fehler beim Anwenden') }}"
+                type="button"></button>
+        <span class="mhddns-spacer"></span>
+        <button class="btn btn-default" id="checkAll" type="button" title="{{ lang._('Alle aktiven Einträge sofort prüfen, nur bei Änderung schreiben') }}">
+            <i class="fa fa-search fa-fw"></i> {{ lang._('Alle jetzt prüfen') }}
+        </button>
+        <button class="btn btn-default" id="forceAll" type="button" title="{{ lang._('Alle aktiven Einträge prüfen und beim Anbieter neu schreiben') }}">
+            <i class="fa fa-refresh fa-fw"></i> {{ lang._('Force-Update alle') }}
+        </button>
     </div>
-</section>
+</div>
 
 {{ partial("layout_partials/base_dialog",['fields':formDialogAccount,'id':'DialogAccount','label':lang._('Eintrag bearbeiten')]) }}

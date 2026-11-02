@@ -2,22 +2,22 @@
     Multihome DynDNS - Failover-DNS
 
     Ein Failover-Eintrag (z.B. www.example.com) zeigt auf die Adresse eines
-    verfuegbaren Mitglieds. Mitglieder sind normale Interface-Eintraege; deren
-    eigene Namen (dsl1..., dsl2...) bleiben unveraendert (Forward/Reverse-DNS).
+    verfügbaren Mitglieds. Mitglieder sind normale Interface-Einträge; deren
+    eigene Namen (dsl1..., dsl2...) bleiben unverändert (Forward/Reverse-DNS).
 
-    Ein Mitglied ist verfuegbar, wenn
+    Ein Mitglied ist verfügbar, wenn
       - seine IP-Ermittlung aktuell, fehlerfrei und nicht blockiert ist und
       - das Gateway seines Interfaces laut dpinger nicht offline ist
         (optional auch nicht bei Paketverlust/Latenz bzw. eigenen Schwellwerten).
 
     Strategien:
       order     Reihenfolge der Mitglieder
-      priority  Gateway-Prioritaet aus System > Gateways (bei Gleichstand Reihenfolge)
+      priority  Gateway-Priorität aus System > Gateways (bei Gleichstand Reihenfolge)
       latency   geringste Latenz laut dpinger
 
-    Zurueckschalten auf ein besseres Mitglied:
+    Zurückschalten auf ein besseres Mitglied:
       immediate sofort
-      delayed   wenn es seit failback_minutes durchgehend verfuegbar ist
+      delayed   wenn es seit failback_minutes durchgehend verfügbar ist
       manual    nur per "Neu bewerten" in der GUI
 
     BSD 2-Clause License
@@ -52,6 +52,8 @@ def number(value):
 
 
 def member_gateway(account, gateways):
+    if account.get('gateway') and account['gateway'] in gateways:
+        return gateways[account['gateway']]
     proto = 'inet6' if account['ipversion'] == 'v6' else 'inet'
     found = [gw for gw in gateways.values()
              if gw.get('interface') == account['interface'] and gw.get('ipprotocol') == proto and not gw.get('disabled')]
@@ -76,7 +78,7 @@ def member_health(failover, account, entry, gateways, now):
         result.update(gateway=gw['name'], gw_status=gw.get('status'), priority=gw.get('priority', 255),
                       loss=number(gw.get('loss')), delay=number(gw.get('delay')))
     if not entry.get('ip') or entry.get('error') or entry.get('blocked'):
-        result['reason'] = entry.get('error') or 'keine gueltige Adresse ermittelt'
+        result['reason'] = entry.get('error') or 'keine gültige Adresse ermittelt'
         return result
     if now - entry.get('checked', 0) > max(3 * account['interval'] * 60, 300):
         result['reason'] = 'IP-Ermittlung veraltet'
@@ -99,7 +101,7 @@ def member_health(failover, account, entry, gateways, now):
             result['reason'] = 'Latenz %.1f ms >= %d ms' % (result['delay'], failover['delay_threshold'])
             return result
     result['ok'] = True
-    result['reason'] = 'verfuegbar' if gw else 'verfuegbar (kein Gateway gefunden, nur IP-Pruefung)'
+    result['reason'] = 'verfügbar' if gw else 'verfügbar (kein Gateway gefunden, nur IP-Prüfung)'
     return result
 
 
@@ -137,7 +139,7 @@ def choose(failover, cfg, state, gateways, now, log):
 
     if not candidates:
         fstate['status'] = 'error'
-        fstate['error'] = 'Kein Mitglied verfuegbar - Eintrag bleibt auf dem letzten Stand'
+        fstate['error'] = 'Kein Mitglied verfügbar - Eintrag bleibt auf dem letzten Stand'
         log.error('Failover %s: %s' % (name, fstate['error']))
         return fstate, None
 
@@ -150,18 +152,18 @@ def choose(failover, cfg, state, gateways, now, log):
     elif best['uuid'] != current['uuid']:
         if failover['strategy'] == 'latency' and current['delay'] is not None and best['delay'] is not None \
                 and current['delay'] - best['delay'] < max(5.0, current['delay'] * 0.2):
-            log.debug('Failover %s: %s nur geringfuegig schneller, bleibe bei %s' % (name, best['name'], current['name']))
+            log.debug('Failover %s: %s nur geringfügig schneller, bleibe bei %s' % (name, best['name'], current['name']))
         elif failover['failback'] == 'immediate':
-            target, reason = best, 'zurueckschalten auf bevorzugtes Mitglied'
+            target, reason = best, 'zurückschalten auf bevorzugtes Mitglied'
         elif failover['failback'] == 'delayed':
             stable = now - since.get(best['uuid'], now)
             if stable >= failover['failback_minutes'] * 60:
-                target, reason = best, 'zurueckschalten, %s seit %d min stabil' % (best['name'], stable // 60)
+                target, reason = best, 'zurückschalten, %s seit %d min stabil' % (best['name'], stable // 60)
             else:
-                log.info('Failover %s: %s wieder verfuegbar, zurueckschalten in %ds' % (
+                log.info('Failover %s: %s wieder verfügbar, zurückschalten in %ds' % (
                     name, best['name'], failover['failback_minutes'] * 60 - stable))
         else:
-            log.info('Failover %s: %s wieder verfuegbar, Zurueckschalten nur manuell' % (name, best['name']))
+            log.info('Failover %s: %s wieder verfügbar, Zurückschalten nur manuell' % (name, best['name']))
 
     if reason:
         previous = current['name'] if current else (fstate.get('active_name') or '-')

@@ -97,7 +97,12 @@ function multihomeddns_firewall(\OPNsense\Firewall\Plugin $fw)
                 continue;
             }
             $inet = (string)$account->ipversion == 'v6' ? 'inet6' : 'inet';
-            $wanted[(string)$account->interface][$inet] = true;
+            $ifname = (string)$account->interface;
+            $gateway = isset($account->gateway) ? (string)$account->gateway : '';
+            // one source address can only be routed one way: first explicitly chosen gateway wins
+            if (empty($wanted[$ifname][$inet])) {
+                $wanted[$ifname][$inet] = $gateway;
+            }
         }
     }
     if (empty($wanted)) {
@@ -116,9 +121,8 @@ function multihomeddns_firewall(\OPNsense\Firewall\Plugin $fw)
         }
         $device = $ifmap[$ifname]['if'];
         $descr = !empty($ifmap[$ifname]['descr']) ? $ifmap[$ifname]['descr'] : strtoupper($ifname);
-        foreach (array_keys($protos) as $inet) {
-            // any usable gateway on this interface, also when not marked as upstream / interface gateway
-            $gwname = $gateways->getInterfaceGateway($ifname, $inet, false, 'name');
+        foreach ($protos as $inet => $chosen) {
+            $gwname = !empty($chosen) ? $chosen : multihomeddns_interface_gateway($gateways, $ifname, $inet);
             if (empty($gwname)) {
                 continue;
             }
@@ -153,6 +157,26 @@ function multihomeddns_firewall(\OPNsense\Firewall\Plugin $fw)
             }
         }
     }
+}
+
+/**
+ * usable gateway on an interface: the interface gateway, otherwise any enabled gateway
+ * bound to it (upstream first, then priority) - also when it is not marked as interface gateway
+ */
+function multihomeddns_interface_gateway($gateways, $ifname, $inet)
+{
+    $name = $gateways->getInterfaceGateway($ifname, $inet, false, 'name');
+    if (!empty($name)) {
+        return $name;
+    }
+    $found = [];
+    foreach ($gateways->gatewaysIndexedByName(false, false, true) as $gwname => $gw) {
+        if (($gw['interface'] ?? '') == $ifname && ($gw['ipprotocol'] ?? 'inet') == $inet && empty($gw['disabled'])) {
+            $found[] = [empty($gw['defaultgw']) ? 1 : 0, (int)($gw['priority'] ?? 255), $gwname];
+        }
+    }
+    sort($found);
+    return !empty($found) ? $found[0][2] : null;
 }
 
 function multihomeddns_syslog()

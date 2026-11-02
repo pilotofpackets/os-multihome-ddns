@@ -52,7 +52,18 @@ service (e.g. all of them ipify) at the same time.
 | **Fast reaction** | Interval per entry down to 1 minute, immediate check on address change (PPPoE reconnect) and immediate failover on gateway alarms. |
 | **Force update** | Per entry, for selected entries or all. |
 | **Full logging** | Five log levels up to debug (addresses, requests/responses, gateway status, policy rules, decisions, provider API calls) in its own log file. |
-| **Test button** | Shows detected address, address classes, method and whether the policy routing rule is active – without writing anything. |
+| **Gateway per entry** | Automatic (interface gateway, otherwise any enabled gateway on the interface) or chosen explicitly – used for the route-to rule and the failover health. |
+| **Test button** | Shows detected address, address classes, method, gateway and the active route-to rule – without writing anything. |
+
+## Screenshots
+
+| Entries | Failover DNS |
+|---|---|
+| ![Entries](docs/screenshots/index_desktop.png) | ![Failover DNS](docs/screenshots/failover_desktop.png) |
+| **Test dialog** – detected address, address classes, gateway, active route-to rule | **Failover details** – member health (dpinger) and switch history |
+| ![Test dialog](docs/screenshots/index_test.png) | ![Failover details](docs/screenshots/failover_details.png) |
+
+<sub>Sample data with documentation IP ranges, rendered with the stock OPNsense theme (`tools/preview`).</sub>
 
 ## How it works
 
@@ -166,6 +177,7 @@ multihome-ddns/                      plugin in opnsense/plugins layout (dns/mult
         │       └── account/                          provider modules (from os-ddclient, Cloudflare own)
         └── service/                                  configd actions, syslog filter
 tests/                              scenario tests with simulated interfaces, gateways, pf and APIs
+tools/preview/                      renders the pages with the OPNsense theme and takes screenshots
 install.sh / uninstall.sh           direct installation without building a package
 ```
 
@@ -173,6 +185,13 @@ Run the tests locally (Python 3 with `requests` and `dnspython`, optional `php-c
 
 ```sh
 sh tests/run.sh
+```
+
+Screenshots of the UI with the real OPNsense theme (needs a checkout of
+[opnsense/core](https://github.com/opnsense/core) and `pip install playwright`):
+
+```sh
+sh tools/preview/run.sh /path/to/opnsense-core
 ```
 
 To build a real package, copy `multihome-ddns/` to `dns/multihome-ddns` in a checkout of

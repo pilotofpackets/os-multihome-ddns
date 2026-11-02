@@ -1,6 +1,6 @@
 <opnsense><system><pf_disable_force_gw>1</pf_disable_force_gw></system><OPNsense><MultihomeDDNS><general><enabled>1</enabled><policy_routing>1</policy_routing></general><accounts>
 <account uuid="1"><enabled>1</enabled><interface>wan</interface><ipversion>v4</ipversion><checkip>auto</checkip></account>
 <account uuid="1b"><enabled>1</enabled><interface>wan</interface><ipversion>v6</ipversion><checkip>web</checkip></account>
-<account uuid="2"><enabled>1</enabled><interface>opt1</interface><ipversion>v4</ipversion><checkip>web</checkip></account>
+<account uuid="2"><enabled>1</enabled><interface>opt1</interface><ipversion>v4</ipversion><checkip>web</checkip><gateway>DSL2_ALT</gateway></account>
 <account uuid="3"><enabled>1</enabled><interface>opt2</interface><ipversion>v4</ipversion><checkip>web</checkip></account>
 </accounts></MultihomeDDNS></OPNsense></opnsense>
