@@ -1,0 +1,22 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          pip install requests dnspython pyflakes
+          sudo apt-get update -qq && sudo apt-get install -y -qq php-cli > /dev/null
+      - name: Lint
+        run: python -m pyflakes multiwan-ddns/src/opnsense/scripts/multiwanddns/multiwanddns.py multiwan-ddns/src/opnsense/scripts/multiwanddns/lib/*.py multiwan-ddns/src/opnsense/scripts/multiwanddns/lib/account/__init__.py multiwan-ddns/src/opnsense/scripts/multiwanddns/lib/account/cloudflare.py
+      - name: Scenario tests
+        run: sh tests/run.sh

@@ -1,0 +1,8 @@
+#!/bin/sh
+case "$1" in
+pppoe0) [ -f "$T/pppoe_down" ] && { echo "ifconfig: interface does not exist" >&2; exit 1; }; printf 'pppoe0: flags=88d1<UP>\n\tinet 93.184.10.20 --> 62.155.1.1 netmask 0xffffffff\n';;
+igb1) printf 'igb1:\n\tinet 192.168.178.2 netmask 0xffffff00\n\tinet 192.168.178.50 netmask 0xffffffff vhid 3\n';;
+igb2) printf 'igb2:\n\tinet 192.168.2.2 netmask 0xffffff00\n';;
+igb3) printf 'igb3:\n\tinet 100.70.1.9 netmask 0xffc00000\n';;
+*) exit 1;;
+esac

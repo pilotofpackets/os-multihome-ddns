@@ -1,112 +1,190 @@
-# Multi-WAN DynDNS für OPNsense
+# os-multihome-ddns – Multi-WAN DynDNS for OPNsense
 
-DynDNS-Plugin für mehrere Internetanschlüsse (z.B. mehrere DSL-Leitungen).
+[![Tests](https://github.com/pilotofpackets/os-multihome-ddns/actions/workflows/tests.yml/badge.svg)](https://github.com/pilotofpackets/os-multihome-ddns/actions/workflows/tests.yml)
+[![License: BSD-2-Clause](https://img.shields.io/badge/license-BSD--2--Clause-blue.svg)](LICENSE)
+![OPNsense](https://img.shields.io/badge/OPNsense-plugin-orange.svg)
 
-- **Feste IP pro Anschluss:** Jeder Eintrag ist an ein Interface gebunden und meldet **dessen** öffentliche IP – nicht die der Default-Route.
-- **Failover-Namen:** Ein Name zeigt immer auf einen verfügbaren Anschluss.
+**Dynamic DNS for firewalls with more than one internet connection.**
 
-Menü: *Dienste › Multi-WAN DynDNS* mit **Einträge**, **Failover-DNS**, **Einstellungen** und **Log File**.
+Every DynDNS entry is bound to an interface and always publishes **that interface's**
+public IP – not the one of the default route. On top of that, **failover names** always
+point to a connection that is currently up.
 
-## Warum das ddclient-Plugin hier scheitert
+> 🇩🇪 Deutsche Anleitung: [README.de.md](README.de.md)
 
-Die Firewall schickt ihre eigenen Abfragen über die Default-Route. Dass eine Abfrage für WAN2 trotzdem über WAN2 geht, hängt an den automatischen „force gw“-Regeln von OPNsense. Diese Regeln fehlen in drei Fällen:
+---
 
-- *Firewall › Einstellungen › Erweitert › „Disable force gateway“* ist gesetzt.
-- Am Interface ist kein Gateway eingetragen.
-- Eine eigene `quick`-Regel greift vorher.
+## Why?
 
-Dann liefert ipify & Co. für alle Einträge dieselbe IP.
+With several WAN connections, the stock ddclient plugin often reports the **same IP for
+every entry**. The check request (ipify & co.) is sent by the firewall itself, and
+locally generated traffic follows the default route.
 
-**Multi-WAN DynDNS erzeugt eigene Regeln**, unabhängig von „Disable force gateway“ – die Option kann also gesetzt bleiben:
+OPNsense only routes it through the "right" WAN via its automatic *force gateway* rules,
+which are missing when:
+
+- *Firewall › Settings › Advanced › "Disable force gateway"* is set (common in multi-WAN setups),
+- the interface has no gateway assigned as interface/upstream gateway (e.g. static IP behind a router),
+- or a `quick` rule of your own matches first.
+
+**os-multihome-ddns generates its own policy routing rules per interface**, independent of
+"Disable force gateway":
 
 ```
-pass out quick route-to (<if> <gw>) proto tcp from (<if>) to !<if-netz> port {80,443}
-pass out quick route-to (<if> <gw>) proto udp from (<if>) to !<if-netz> port 53
+pass out quick route-to (<if> <gw>) proto tcp from (<if>) to !<if-net> port {80,443}
+pass out quick route-to (<if> <gw>) proto udp from (<if>) to !<if-net> port 53
 ```
 
-- Die Regeln gelten nur für Verkehr mit der Quelladresse des jeweiligen Interfaces.
-- Mehrere Interfaces können deshalb gleichzeitig **denselben** Prüfdienst nutzen, z.B. alle ipify.
-- Kontrolle: `pfctl -sr | grep route-to` oder der Test-Knopf (Kolben) am Eintrag.
+The rules match on the **source address**, so all interfaces can use the very same check
+service (e.g. all of them ipify) at the same time.
 
-## Funktionen
+## Features
 
-### IP-Ermittlung
-- **Automatisch:** Ist die Interface-Adresse öffentlich (PPPoE), wird sie direkt genommen. Sonst wird ein Prüfdienst über das Interface abgefragt.
-- **Prüfdienste wie os-ddclient:**
-  - akamai, cloudflare (Web und DNS), dynu, freedns, he, icanhazip, ipify, loopia, myonlineportal, noip, nsupdate.info, zoneedit
-  - eigene URL
-- **IPv6** inklusive Austausch des Host-Teils („Dynamic ipv6 host“).
-- **Prüfintervall pro Eintrag ab 1 Minute.** Sofortige Prüfung bei Adresswechsel (PPPoE-Reconnect).
+| | |
+|---|---|
+| **Per-interface detection** | Public interface address (e.g. PPPoE) is used directly, otherwise a check service is queried *through* that interface. IPv4 and IPv6, optional IPv6 host part replacement. |
+| **Check services** | Same list as os-ddclient: akamai, cloudflare (web and DNS `whoami.cloudflare`), dynu, freedns, he, icanhazip, ipify, loopia, myonlineportal, noip, nsupdate.info, zoneedit, custom URL. |
+| **Providers** | The native providers of os-ddclient: all-inkl (KAS), Amazon Route 53, Azure, Cloudflare, deSEC, DigitalOcean, DNS-O-Matic, DNSPod, Domeneshop, Duck DNS, DynDNS, Dynu, Gandi, HE.net, Hetzner, Hostinger, INWX, Loopia, netcup, No-IP, nsupdate.info, OVH, Porkbun, PowerDNS, spDYN, STRATO and custom dyndns2/GET/POST/PUT. |
+| **Cloudflare round robin** | Several connections may maintain the same name; each entry owns its record (tagged via the record comment). |
+| **Address protection** | Private (RFC 1918 / RFC 4193), reserved (RFC 6890) and CGNAT (RFC 6598) addresses are highlighted and **never written**. Connections behind CGNAT are flagged and skipped (configurable). |
+| **Routing guard** | If a check service returns an address that already belongs to another interface, nothing is written and the status points to the routing problem. |
+| **Failover DNS** | A name (e.g. `www`) follows the best available member, based on dpinger gateway status (down, packet loss, latency or own thresholds). Strategies: order, gateway priority, lowest latency. Failback: immediate, delayed, manual. |
+| **Fast reaction** | Interval per entry down to 1 minute, immediate check on address change (PPPoE reconnect) and immediate failover on gateway alarms. |
+| **Force update** | Per entry, for selected entries or all. |
+| **Full logging** | Five log levels up to debug (addresses, requests/responses, gateway status, policy rules, decisions, provider API calls) in its own log file. |
+| **Test button** | Shows detected address, address classes, method and whether the policy routing rule is active – without writing anything. |
 
-### Adressschutz
-- **Private Adressen** (RFC 1918, RFC 4193) und **reservierte Adressen** (RFC 6890) werden rot markiert und **nie geschrieben**.
-- **CGNAT** (RFC 6598, 100.64.0.0/10) wird orange markiert.
-  - Eine CGNAT-Adresse wird **nie geschrieben**.
-  - Hängt das Interface selbst hinter CGNAT, wird standardmäßig ebenfalls **nicht** aktualisiert. Das ist abschaltbar.
-- **Schutz vor falschem Routing:** Liefert ein Interface eine IP, die schon einem anderen gehört, wird nicht geschrieben.
+## How it works
 
-### Anbieter
-Die nativen Anbieter von os-ddclient, übernommen (BSD-Lizenz):
+```mermaid
+flowchart LR
+    subgraph OPNsense
+        C[cron every minute<br/>newwanip / gateway alarm] --> D[detect per interface]
+        D -->|public PPPoE address| I[interface address]
+        D -->|private / behind router| Q[check service query<br/>source = interface IP]
+        Q --> R[route-to rule<br/>via interface gateway]
+        I --> G{address class<br/>& routing guard}
+        R --> G
+        G -->|public| P[provider update<br/>dsl1.example.com, dsl2...]
+        G -->|private / CGNAT / conflict| B[blocked + highlighted]
+        P --> F[failover evaluation<br/>dpinger status]
+        F --> W[www.example.com -> best member]
+    end
+```
 
-- **dyndns2-Familie:** DynDNS, deSEC, DNS-O-Matic, Dynu, HE.net, INWX, Loopia, No-IP, nsupdate.info, OVH, spDYN, STRATO, eigener Dienst (GET/POST/PUT)
-- **API-Anbieter:** all-inkl (KAS), Amazon Route 53, Azure, DigitalOcean, DNSPod, Domeneshop, Duck DNS, Gandi, Hetzner, Hostinger, netcup, Porkbun, PowerDNS
-- **Cloudflare** in eigener Umsetzung: Mehrere Anschlüsse dürfen denselben Namen pflegen (Round-Robin). Jeder Eintrag erkennt seinen Record am Kommentar `multiwan-ddns:<uuid>`.
+## Requirements
 
-### Failover-DNS
-- Ein Name (z.B. `www.example.com`) zeigt auf die IP eines verfügbaren Mitglieds.
-- Die festen Namen pro Anschluss (`dsl1…`, `dsl2…`) bleiben unverändert, damit Forward- und Reverse-DNS stimmen.
-- **Ausfall** wird über den Gateway-Status (dpinger) erkannt:
-  - immer bei *offline*
-  - optional bei Paketverlust oder Latenz-Alarm
-  - optional über eigene Schwellwerte
-  - außerdem, wenn die IP-Ermittlung des Mitglieds fehlschlägt
-- **Auswahl:** Reihenfolge, Gateway-Priorität oder geringste Latenz.
-- **Zurückschalten:** sofort, verzögert (nach stabiler Zeit) oder nur manuell (Knopf „Neu bewerten“).
-- **Reaktion:** sofort bei Gateway-Alarmen und zusätzlich jede Minute.
-- **Detailansicht:** Zustand aller Mitglieder und Verlauf der Umschaltungen.
+- OPNsense with a current release (developed against the 26.x code base)
+- Only stock components: `curl`, `python3`, `requests`, `dnspython`
+- Optional: `boto3` for Amazon Route 53 (the installer tries to add it)
 
-### Bedienung und Log
-- **Force-Update:** pro Eintrag, für ausgewählte oder für alle Einträge.
-- **Log-Stufen:**
-  - Fehler
-  - Warnungen
-  - Änderungen
-  - **jede Prüfung** (Standard)
-  - Debug: Interface-Adressen, Abfragen und Antworten, Gateway-Status, Policy-Regeln, Entscheidungen, Anbieter-API-Aufrufe
+## Installation
 
-## Installation (direkt auf der Firewall)
+Log in to the firewall via SSH as `root` (console menu option **8**, Shell) and run:
 
 ```sh
-# Ordner auf die OPNsense kopieren (z.B. per scp), dann als root:
-sh install.sh
+fetch -o /tmp/mhddns.tar.gz https://github.com/pilotofpackets/os-multihome-ddns/archive/refs/heads/main.tar.gz
+tar -xzf /tmp/mhddns.tar.gz -C /tmp
+sh /tmp/os-multihome-ddns-main/install.sh
 ```
 
-Eine vorhandene Vorgängerversion (Cloudflare DDNS / `cfddns`) wird dabei entfernt.
+SSH can be enabled under *System › Settings › Administration › Secure Shell*.
 
-Danach unter *Dienste › Multi-WAN DynDNS*:
+Then reload the web UI. The plugin lives under **Services › Multi-WAN DynDNS**.
 
-1. **Einträge:** pro Anschluss und IP-Version einen Eintrag anlegen (Interface, Anbieter, Hostnamen).
-2. **Failover-DNS** (optional): Namen anlegen und Mitglieder wählen.
-3. **Einstellungen:** „Aktiviert“ setzen, dann **Speichern und anwenden**. Das lädt die Firewall-Regeln und den Zeitplan neu und prüft sofort.
+**Updating:** run the same three commands again. Settings are kept in `config.xml`.
 
-Entfernen: `sh uninstall.sh` (Einstellungen in der config.xml bleiben erhalten).
+**Uninstalling:** `sh /tmp/os-multihome-ddns-main/uninstall.sh` (settings stay in `config.xml`).
 
-### Cloudflare API-Token
+After a full reinstall of the firewall, run the installer again; your settings come back with the config backup.
 
-*My Profile › API Tokens › Create Token › „Edit zone DNS“* mit den Rechten **Zone › DNS › Edit** und **Zone › Zone › Read**, beschränkt auf die Zone.
+## Configuration
 
-## Als Paket bauen (optional)
+1. **Entries** – one entry per connection and IP version:
+   - interface
+   - detection *Automatic*
+   - check service (any – they may be the same for all interfaces)
+   - provider, credentials, zone and host names (e.g. `dsl1`, `dsl2`)
+2. **Settings** – tick *Enabled*, choose a log level, then click *Save and apply*. This loads the policy routing rules and the schedule.
+3. Use the 🧪 **test** button on each entry to verify the detected address and the routing rule.
+4. **Failover DNS** (optional):
+   - create a name (e.g. `www`) and select the member entries
+   - choose strategy and failback, then click *Apply*
 
-`multiwan-ddns/` hat die Struktur von [opnsense/plugins](https://github.com/opnsense/plugins). Nach `dns/multiwan-ddns` kopieren und `make package` ausführen.
+Verify the rules on the shell: `pfctl -sr | grep route-to`
 
-## Hinweise
+### Failover DNS in practice
 
-- **Abhängigkeiten:** nur Bordmittel (`curl`, `python3`, `requests`, `dnspython`). Für Amazon Route 53 wird `boto3` benötigt; `install.sh` versucht es zu installieren.
-- **HA/CARP:** Das Plugin nur auf dem Master aktivieren.
-- **Dateien:**
-  - Status: `/var/db/multiwanddns/state.json`
-  - Log: `/var/log/multiwanddns/`
+| Name | Points to | Purpose |
+|---|---|---|
+| `dsl1.example.com` | always DSL 1 | fixed, matches reverse DNS / PTR |
+| `dsl2.example.com` | always DSL 2 | fixed, matches reverse DNS / PTR |
+| `www.example.com` | best available line | service name for clients, follows failover |
 
-## Lizenz
+A member is considered **down** when:
+- its gateway is *offline* (always),
+- *packet loss* or *latency* alarms are reported (optional),
+- your own loss or latency thresholds are exceeded (optional),
+- or its own address detection fails or is blocked.
 
-BSD 2-Clause. Die Anbieter-Module unter `scripts/multiwanddns/lib/account/` stammen aus os-ddclient (Copyright Ad Schellevis / Deciso B.V. und Beitragende), ebenso die Liste der Prüfdienste.
+Gateway thresholds themselves are configured under *System › Gateways*.
+
+### Cloudflare API token
+
+*My Profile › API Tokens › Create Token › "Edit zone DNS"* with **Zone › DNS › Edit** and
+**Zone › Zone › Read**, restricted to the zone. Leave *username* empty for tokens; an
+e-mail address as username switches to the legacy global API key.
+
+## Troubleshooting
+
+| Symptom | Cause / fix |
+|---|---|
+| Status *blocked*: "also assigned to interface …" | The query left through the wrong gateway. Click *Apply*, then check the test dialog for an active route-to rule. Is a gateway configured on that interface? |
+| Test dialog: "no rule active" | No usable gateway found on the interface (*System › Gateways*) or settings not applied yet. |
+| Orange **CGNAT** badge | The interface has a 100.64.0.0/10 address. The line is not reachable from outside via IPv4 – ask your ISP for a public IPv4 or use IPv6. |
+| Red **private** badge on the public IP | A check service or the interface returned a private address. It is never written; use *check service* instead of *interface address*. |
+| Nothing happens | Is the service enabled under *Settings*? Set log level *Debug* and look at *Log File*. |
+
+Files on the firewall:
+
+- state: `/var/db/multiwanddns/state.json`
+- log: `/var/log/multiwanddns/`
+
+## Development
+
+```
+multiwan-ddns/                      plugin in opnsense/plugins layout (dns/multiwan-ddns)
+├── Makefile, pkg-descr
+└── src/
+    ├── etc/inc/plugins.inc.d/multiwanddns.inc        firewall rules, cron, newwanip/monitor hooks, syslog
+    └── opnsense/
+        ├── mvc/app/…/MultiWanDDNS/                   model, API + UI controllers, forms, views
+        ├── scripts/multiwanddns/
+        │   ├── multiwanddns.py                       CLI used by configd
+        │   ├── gateways.php                          gateways + dpinger status as JSON
+        │   └── lib/                                  detect, runner, failover, log, config
+        │       └── account/                          provider modules (from os-ddclient, Cloudflare own)
+        └── service/                                  configd actions, syslog filter
+tests/                              scenario tests with simulated interfaces, gateways, pf and APIs
+install.sh / uninstall.sh           direct installation without building a package
+```
+
+Run the tests locally (Python 3 with `requests` and `dnspython`, optional `php-cli`):
+
+```sh
+sh tests/run.sh
+```
+
+To build a real package, copy `multiwan-ddns/` to `dns/multiwan-ddns` in a checkout of
+[opnsense/plugins](https://github.com/opnsense/plugins) and run `make package`.
+
+The web UI is currently in German. Translations and pull requests are welcome.
+
+## Credits & license
+
+BSD 2-Clause, see [LICENSE](LICENSE).
+
+The provider modules in `lib/account/` and the list of check services are taken from
+[os-ddclient](https://github.com/opnsense/plugins/tree/master/dns/ddclient)
+(© Ad Schellevis, Deciso B.V. and contributors, BSD 2-Clause). This is a community
+project and not affiliated with the OPNsense project or Deciso B.V.

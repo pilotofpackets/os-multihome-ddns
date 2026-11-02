@@ -1,0 +1,3 @@
+#!/bin/sh
+echo 'pass out quick route-to (igb1 192.168.178.1) inet proto tcp from (igb1) to ! (igb1:network) port = https flags S/SA keep state allow-opts label "x"'
+echo 'pass out quick route-to (igb2 192.168.2.1) inet proto udp from (igb2) to ! (igb2:network) port = domain keep state allow-opts label "y"'

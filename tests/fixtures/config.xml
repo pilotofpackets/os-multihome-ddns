@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<opnsense>
+  <system><pf_disable_force_gw>1</pf_disable_force_gw></system>
+  <interfaces>
+    <wan><if>pppoe0</if><descr>DSL1</descr></wan>
+    <opt1><if>igb1</if><descr>DSL2</descr></opt1>
+    <opt2><if>igb2</if><descr>DSL3</descr></opt2>
+    <opt3><if>igb3</if><descr>LTE</descr></opt3>
+  </interfaces>
+  <OPNsense>
+    <MultiWanDDNS version="2.0.0">
+      <general><enabled>1</enabled><loglevel>debug</loglevel><policy_routing>1</policy_routing><duplicate_guard>1</duplicate_guard><block_cgnat>1</block_cgnat><timeout>5</timeout><resync_hours>24</resync_hours></general>
+      <accounts>
+        <account uuid="11111111-1111-1111-1111-111111111111"><enabled>1</enabled><description>DSL1</description><interface>wan</interface><ipversion>v4</ipversion><checkip>auto</checkip><checkip_service>ipify_ipv4</checkip_service><force_ssl>1</force_ssl><interval>1</interval><service>cloudflare</service><password>tok123</password><zone>example.com</zone><hostnames>dsl1,vpn</hostnames><ttl>1</ttl></account>
+        <account uuid="22222222-2222-2222-2222-222222222222"><enabled>1</enabled><description>DSL2</description><interface>opt1</interface><ipversion>v4</ipversion><checkip>auto</checkip><checkip_service>ipify_ipv4</checkip_service><force_ssl>1</force_ssl><interval>1</interval><service>cloudflare</service><password>tok123</password><zone>example.com</zone><hostnames>dsl2,vpn</hostnames><ttl>120</ttl></account>
+        <account uuid="33333333-3333-3333-3333-333333333333"><enabled>1</enabled><description>DSL3</description><interface>opt2</interface><ipversion>v4</ipversion><checkip>web</checkip><checkip_service>cloudflare_dns</checkip_service><interval>1</interval><service>dyndns2</service><username>u</username><password>p</password><hostnames>dsl3.dyndns.example</hostnames></account>
+        <account uuid="44444444-4444-4444-4444-444444444444"><enabled>1</enabled><description>LTE</description><interface>opt3</interface><ipversion>v4</ipversion><checkip>auto</checkip><checkip_service>icanhazip</checkip_service><interval>1</interval><service>cloudflare</service><password>tok123</password><zone>example.com</zone><hostnames>lte</hostnames></account>
+      </accounts>
+      <failovers>
+        <failover uuid="99999999-9999-9999-9999-999999999999"><enabled>1</enabled><description>Main</description><ipversion>v4</ipversion><members>11111111-1111-1111-1111-111111111111,22222222-2222-2222-2222-222222222222,33333333-3333-3333-3333-333333333333</members><strategy>order</strategy><treat_loss>1</treat_loss><treat_delay>0</treat_delay><loss_threshold>0</loss_threshold><delay_threshold>0</delay_threshold><failback>delayed</failback><failback_minutes>5</failback_minutes><service>cloudflare</service><password>tok123</password><zone>example.com</zone><hostnames>www</hostnames><ttl>60</ttl></failover>
+      </failovers>
+    </MultiWanDDNS>
+  </OPNsense>
+</opnsense>
