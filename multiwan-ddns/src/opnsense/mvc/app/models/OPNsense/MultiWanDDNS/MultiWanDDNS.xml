@@ -1,0 +1,377 @@
+<model>
+    <mount>//OPNsense/MultiWanDDNS</mount>
+    <version>2.0.0</version>
+    <description>Multi-WAN DynDNS (per interface, failover)</description>
+    <items>
+        <general>
+            <enabled type="BooleanField">
+                <Default>0</Default>
+                <Required>Y</Required>
+            </enabled>
+            <loglevel type="OptionField">
+                <Default>info</Default>
+                <Required>Y</Required>
+                <OptionValues>
+                    <error>Nur Fehler</error>
+                    <warning>Fehler und Warnungen</warning>
+                    <notice>Zusätzlich Änderungen und Updates</notice>
+                    <info>Zusätzlich jede Prüfung (vollständig)</info>
+                    <debug>Debug (alle Details, Abfragen, API-Aufrufe)</debug>
+                </OptionValues>
+            </loglevel>
+            <policy_routing type="BooleanField">
+                <Default>1</Default>
+                <Required>Y</Required>
+            </policy_routing>
+            <duplicate_guard type="BooleanField">
+                <Default>1</Default>
+                <Required>Y</Required>
+            </duplicate_guard>
+            <block_cgnat type="BooleanField">
+                <Default>1</Default>
+                <Required>Y</Required>
+            </block_cgnat>
+            <timeout type="IntegerField">
+                <Default>10</Default>
+                <Required>Y</Required>
+                <MinimumValue>2</MinimumValue>
+                <MaximumValue>60</MaximumValue>
+            </timeout>
+            <resync_hours type="IntegerField">
+                <Default>24</Default>
+                <Required>Y</Required>
+                <MinimumValue>0</MinimumValue>
+                <MaximumValue>720</MaximumValue>
+            </resync_hours>
+        </general>
+        <accounts>
+            <account type="ArrayField">
+                <enabled type="BooleanField">
+                    <Default>1</Default>
+                    <Required>Y</Required>
+                </enabled>
+                <description type="TextField">
+                    <Required>Y</Required>
+                    <Mask>/^.{1,255}$/u</Mask>
+                    <ValidationMessage>Bitte eine Beschreibung angeben (wird u.a. im Failover angezeigt).</ValidationMessage>
+                </description>
+                <interface type="InterfaceField">
+                    <Required>Y</Required>
+                </interface>
+                <ipversion type="OptionField">
+                    <Required>Y</Required>
+                    <Default>v4</Default>
+                    <OptionValues>
+                        <v4>IPv4</v4>
+                        <v6>IPv6</v6>
+                    </OptionValues>
+                </ipversion>
+                <checkip type="OptionField">
+                    <Required>Y</Required>
+                    <Default>auto</Default>
+                    <OptionValues>
+                        <auto>Automatisch</auto>
+                        <web>Prüfdienst über dieses Interface</web>
+                        <interface>Adresse des Interfaces</interface>
+                    </OptionValues>
+                </checkip>
+                <checkip_service type="OptionField">
+                    <Required>Y</Required>
+                    <Default>cloudflare</Default>
+                    <OptionValues>
+                        <cloudflare>cloudflare</cloudflare>
+                        <cloudflare_ipv4>cloudflare-ipv4</cloudflare_ipv4>
+                        <cloudflare_ipv6>cloudflare-ipv6</cloudflare_ipv6>
+                        <cloudflare_dns>cloudflare-dns (DNS-Abfrage)</cloudflare_dns>
+                        <akamai>akamai</akamai>
+                        <akamai_ipv4>akamai-ipv4</akamai_ipv4>
+                        <akamai_ipv6>akamai-ipv6</akamai_ipv6>
+                        <dynu_ipv4>dynu-ipv4</dynu_ipv4>
+                        <dynu_ipv6>dynu-ipv6</dynu_ipv6>
+                        <freedns>freedns</freedns>
+                        <he>he</he>
+                        <icanhazip>icanhazip</icanhazip>
+                        <ipify_ipv4>ipify-ipv4</ipify_ipv4>
+                        <ipify_ipv6>ipify-ipv6</ipify_ipv6>
+                        <loopia>loopia</loopia>
+                        <myonlineportal>myonlineportal</myonlineportal>
+                        <noip_ipv4>noip-ipv4</noip_ipv4>
+                        <noip_ipv6>noip-ipv6</noip_ipv6>
+                        <nsupdate_info_ipv4>nsupdate.info-ipv4</nsupdate_info_ipv4>
+                        <nsupdate_info_ipv6>nsupdate.info-ipv6</nsupdate_info_ipv6>
+                        <zoneedit>zoneedit</zoneedit>
+                        <custom>Eigene URL</custom>
+                    </OptionValues>
+                </checkip_service>
+                <custom_url type="UrlField">
+                    <Required>N</Required>
+                </custom_url>
+                <force_ssl type="BooleanField">
+                    <Default>1</Default>
+                    <Required>Y</Required>
+                </force_ssl>
+                <dynipv6host type="TextField">
+                    <Required>N</Required>
+                    <Mask>/^::(([0-9a-fA-F]{1,4}:){0,3}[0-9a-fA-F]{1,4})?$/u</Mask>
+                    <ValidationMessage>Ungültiger Host-Teil (z.B. ::1000).</ValidationMessage>
+                </dynipv6host>
+                <interval type="IntegerField">
+                    <Default>5</Default>
+                    <Required>Y</Required>
+                    <MinimumValue>1</MinimumValue>
+                    <MaximumValue>1440</MaximumValue>
+                </interval>
+                <service type="OptionField">
+                    <Required>Y</Required>
+                    <Default>cloudflare</Default>
+                    <OptionValues>
+                        <allinkl>all-inkl.com (KAS API)</allinkl>
+                        <aws>Amazon Route 53</aws>
+                        <cloudflare>Cloudflare</cloudflare>
+                        <custom>Eigener Dienst (dyndns2 / GET / POST / PUT)</custom>
+                        <desec-v4>deSEC (IPv4)</desec-v4>
+                        <desec-v6>deSEC (IPv6)</desec-v6>
+                        <digitalocean>DigitalOcean</digitalocean>
+                        <dns-o-matic>DNS-O-Matic</dns-o-matic>
+                        <dnspodcn>DNSPod (Tencent Cloud)</dnspodcn>
+                        <domeneshop>Domeneshop</domeneshop>
+                        <duckdns>Duck DNS</duckdns>
+                        <dyndns2>DynDNS.com</dyndns2>
+                        <dynu>Dynu</dynu>
+                        <gandi>Gandi</gandi>
+                        <he-net>HE.net</he-net>
+                        <he-net-tunnel>HE.net TunnelBroker</he-net-tunnel>
+                        <hetzner>Hetzner DNS</hetzner>
+                        <hetzner-legacy>Hetzner DNS Legacy</hetzner-legacy>
+                        <hostinger>Hostinger</hostinger>
+                        <inwx>INWX</inwx>
+                        <loopia>Loopia</loopia>
+                        <azure>Microsoft Azure</azure>
+                        <netcup>netcup</netcup>
+                        <noip>No-IP</noip>
+                        <nsupdatev4>nsupdate.info (IPv4)</nsupdatev4>
+                        <nsupdatev6>nsupdate.info (IPv6)</nsupdatev6>
+                        <ovh>OVHcloud DynHost</ovh>
+                        <porkbun>Porkbun</porkbun>
+                        <powerdns>PowerDNS API</powerdns>
+                        <spdyn>spDYN</spdyn>
+                        <strato>STRATO</strato>
+                    </OptionValues>
+                </service>
+                <protocol type="OptionField">
+                    <Required>N</Required>
+                    <OptionValues>
+                        <dyndns2>DynDNS 2</dyndns2>
+                        <get>GET (eigene URL)</get>
+                        <post>POST (eigene URL)</post>
+                        <put>PUT (eigene URL)</put>
+                    </OptionValues>
+                </protocol>
+                <server type="TextField">
+                    <Required>N</Required>
+                    <Mask>/^[^\n]*$/</Mask>
+                </server>
+                <resourceId type="TextField">
+                    <Required>N</Required>
+                    <Mask>/^[^\n]*$/</Mask>
+                </resourceId>
+                <username type="TextField">
+                    <Required>N</Required>
+                    <Mask>/^([a-zA-Z0-9\-.@_:+\%])*$/u</Mask>
+                    <ValidationMessage>Der Benutzername enthält ungültige Zeichen.</ValidationMessage>
+                </username>
+                <password type="UpdateOnlyTextField">
+                    <Required>N</Required>
+                    <Mask>/^[^\n]*$/</Mask>
+                </password>
+                <hostnames type="TextField">
+                    <Required>Y</Required>
+                    <Mask>/^(@|[a-zA-Z0-9_*]([a-zA-Z0-9_.*-]*[a-zA-Z0-9])?)(,(@|[a-zA-Z0-9_*]([a-zA-Z0-9_.*-]*[a-zA-Z0-9])?))*$/</Mask>
+                    <ValidationMessage>Kommagetrennte Liste von Hostnamen.</ValidationMessage>
+                </hostnames>
+                <wildcard type="BooleanField">
+                    <Default>0</Default>
+                    <Required>Y</Required>
+                </wildcard>
+                <zone type="TextField">
+                    <Required>N</Required>
+                    <Mask>/^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$/</Mask>
+                    <ValidationMessage>Zonenname (z.B. example.com) oder Zonen-ID.</ValidationMessage>
+                </zone>
+                <ttl type="IntegerField">
+                    <Default>300</Default>
+                    <Required>Y</Required>
+                    <MinimumValue>1</MinimumValue>
+                    <MaximumValue>604800</MaximumValue>
+                </ttl>
+                <proxied type="BooleanField">
+                    <Default>0</Default>
+                    <Required>Y</Required>
+                </proxied>
+            </account>
+        </accounts>
+        <failovers>
+            <failover type="ArrayField">
+                <enabled type="BooleanField">
+                    <Default>1</Default>
+                    <Required>Y</Required>
+                </enabled>
+                <description type="TextField">
+                    <Required>Y</Required>
+                    <Mask>/^.{1,255}$/u</Mask>
+                </description>
+                <ipversion type="OptionField">
+                    <Required>Y</Required>
+                    <Default>v4</Default>
+                    <OptionValues>
+                        <v4>IPv4</v4>
+                        <v6>IPv6</v6>
+                    </OptionValues>
+                </ipversion>
+                <members type="ModelRelationField">
+                    <Model>
+                        <accounts>
+                            <source>OPNsense.MultiWanDDNS.MultiWanDDNS</source>
+                            <items>accounts.account</items>
+                            <display>description</display>
+                        </accounts>
+                    </Model>
+                    <Multiple>Y</Multiple>
+                    <Required>Y</Required>
+                    <ValidationMessage>Mindestens ein Mitglied wählen.</ValidationMessage>
+                </members>
+                <strategy type="OptionField">
+                    <Required>Y</Required>
+                    <Default>order</Default>
+                    <OptionValues>
+                        <order>Reihenfolge der Mitglieder</order>
+                        <priority>Gateway-Priorität (System › Gateways)</priority>
+                        <latency>Geringste Latenz (dpinger)</latency>
+                    </OptionValues>
+                </strategy>
+                <treat_loss type="BooleanField">
+                    <Default>1</Default>
+                    <Required>Y</Required>
+                </treat_loss>
+                <treat_delay type="BooleanField">
+                    <Default>0</Default>
+                    <Required>Y</Required>
+                </treat_delay>
+                <loss_threshold type="IntegerField">
+                    <Default>0</Default>
+                    <Required>Y</Required>
+                    <MinimumValue>0</MinimumValue>
+                    <MaximumValue>100</MaximumValue>
+                </loss_threshold>
+                <delay_threshold type="IntegerField">
+                    <Default>0</Default>
+                    <Required>Y</Required>
+                    <MinimumValue>0</MinimumValue>
+                    <MaximumValue>100000</MaximumValue>
+                </delay_threshold>
+                <failback type="OptionField">
+                    <Required>Y</Required>
+                    <Default>delayed</Default>
+                    <OptionValues>
+                        <immediate>Sofort</immediate>
+                        <delayed>Verzögert (nach stabiler Zeit)</delayed>
+                        <manual>Nur manuell</manual>
+                    </OptionValues>
+                </failback>
+                <failback_minutes type="IntegerField">
+                    <Default>5</Default>
+                    <Required>Y</Required>
+                    <MinimumValue>0</MinimumValue>
+                    <MaximumValue>1440</MaximumValue>
+                </failback_minutes>
+                <service type="OptionField">
+                    <Required>Y</Required>
+                    <Default>cloudflare</Default>
+                    <OptionValues>
+                        <allinkl>all-inkl.com (KAS API)</allinkl>
+                        <aws>Amazon Route 53</aws>
+                        <cloudflare>Cloudflare</cloudflare>
+                        <custom>Eigener Dienst (dyndns2 / GET / POST / PUT)</custom>
+                        <desec-v4>deSEC (IPv4)</desec-v4>
+                        <desec-v6>deSEC (IPv6)</desec-v6>
+                        <digitalocean>DigitalOcean</digitalocean>
+                        <dns-o-matic>DNS-O-Matic</dns-o-matic>
+                        <dnspodcn>DNSPod (Tencent Cloud)</dnspodcn>
+                        <domeneshop>Domeneshop</domeneshop>
+                        <duckdns>Duck DNS</duckdns>
+                        <dyndns2>DynDNS.com</dyndns2>
+                        <dynu>Dynu</dynu>
+                        <gandi>Gandi</gandi>
+                        <he-net>HE.net</he-net>
+                        <he-net-tunnel>HE.net TunnelBroker</he-net-tunnel>
+                        <hetzner>Hetzner DNS</hetzner>
+                        <hetzner-legacy>Hetzner DNS Legacy</hetzner-legacy>
+                        <hostinger>Hostinger</hostinger>
+                        <inwx>INWX</inwx>
+                        <loopia>Loopia</loopia>
+                        <azure>Microsoft Azure</azure>
+                        <netcup>netcup</netcup>
+                        <noip>No-IP</noip>
+                        <nsupdatev4>nsupdate.info (IPv4)</nsupdatev4>
+                        <nsupdatev6>nsupdate.info (IPv6)</nsupdatev6>
+                        <ovh>OVHcloud DynHost</ovh>
+                        <porkbun>Porkbun</porkbun>
+                        <powerdns>PowerDNS API</powerdns>
+                        <spdyn>spDYN</spdyn>
+                        <strato>STRATO</strato>
+                    </OptionValues>
+                </service>
+                <protocol type="OptionField">
+                    <Required>N</Required>
+                    <OptionValues>
+                        <dyndns2>DynDNS 2</dyndns2>
+                        <get>GET (eigene URL)</get>
+                        <post>POST (eigene URL)</post>
+                        <put>PUT (eigene URL)</put>
+                    </OptionValues>
+                </protocol>
+                <server type="TextField">
+                    <Required>N</Required>
+                    <Mask>/^[^\n]*$/</Mask>
+                </server>
+                <resourceId type="TextField">
+                    <Required>N</Required>
+                    <Mask>/^[^\n]*$/</Mask>
+                </resourceId>
+                <username type="TextField">
+                    <Required>N</Required>
+                    <Mask>/^([a-zA-Z0-9\-.@_:+\%])*$/u</Mask>
+                    <ValidationMessage>Der Benutzername enthält ungültige Zeichen.</ValidationMessage>
+                </username>
+                <password type="UpdateOnlyTextField">
+                    <Required>N</Required>
+                    <Mask>/^[^\n]*$/</Mask>
+                </password>
+                <hostnames type="TextField">
+                    <Required>Y</Required>
+                    <Mask>/^(@|[a-zA-Z0-9_*]([a-zA-Z0-9_.*-]*[a-zA-Z0-9])?)(,(@|[a-zA-Z0-9_*]([a-zA-Z0-9_.*-]*[a-zA-Z0-9])?))*$/</Mask>
+                    <ValidationMessage>Kommagetrennte Liste von Hostnamen.</ValidationMessage>
+                </hostnames>
+                <wildcard type="BooleanField">
+                    <Default>0</Default>
+                    <Required>Y</Required>
+                </wildcard>
+                <zone type="TextField">
+                    <Required>N</Required>
+                    <Mask>/^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$/</Mask>
+                    <ValidationMessage>Zonenname (z.B. example.com) oder Zonen-ID.</ValidationMessage>
+                </zone>
+                <ttl type="IntegerField">
+                    <Default>300</Default>
+                    <Required>Y</Required>
+                    <MinimumValue>1</MinimumValue>
+                    <MaximumValue>604800</MaximumValue>
+                </ttl>
+                <proxied type="BooleanField">
+                    <Default>0</Default>
+                    <Required>Y</Required>
+                </proxied>
+            </failover>
+        </failovers>
+    </items>
+</model>

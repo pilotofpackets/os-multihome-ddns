@@ -1,0 +1,143 @@
+<form>
+    <field>
+        <type>header</type>
+        <label>Failover</label>
+    </field>
+    <field>
+        <id>failover.enabled</id>
+        <label>Aktiviert</label>
+        <type>checkbox</type>
+    </field>
+    <field>
+        <id>failover.description</id>
+        <label>Beschreibung</label>
+        <type>text</type>
+    </field>
+    <field>
+        <id>failover.ipversion</id>
+        <label>IP-Version</label>
+        <type>dropdown</type>
+    </field>
+    <field>
+        <id>failover.members</id>
+        <label>Mitglieder</label>
+        <type>select_multiple</type>
+        <style>tokenize</style>
+        <help>Interface-Einträge, deren Adresse dieser Name annehmen darf. Bei Strategie "Reihenfolge" zählt die Reihenfolge der Auswahl (erstes = bevorzugt). Die eigenen Namen der Mitglieder bleiben unverändert (Forward/Reverse-DNS).</help>
+    </field>
+    <field>
+        <id>failover.strategy</id>
+        <label>Auswahl</label>
+        <type>dropdown</type>
+        <help>Welches verfügbare Mitglied bevorzugt wird.</help>
+    </field>
+    <field>
+        <type>header</type>
+        <label>Ausfallerkennung (dpinger)</label>
+    </field>
+    <field>
+        <id>failover.treat_loss</id>
+        <label>Paketverlust = Ausfall</label>
+        <type>checkbox</type>
+        <help>Mitglied gilt als ausgefallen, wenn das Gateway Paketverlust meldet (Schwellwerte unter System › Gateways). Offline gilt immer als Ausfall.</help>
+    </field>
+    <field>
+        <id>failover.treat_delay</id>
+        <label>Latenz-Alarm = Ausfall</label>
+        <type>checkbox</type>
+    </field>
+    <field>
+        <id>failover.loss_threshold</id>
+        <label>Eigener Verlust-Schwellwert (%)</label>
+        <type>text</type>
+        <help>0 = aus. Unabhängig vom Gateway-Alarm.</help>
+    </field>
+    <field>
+        <id>failover.delay_threshold</id>
+        <label>Eigener Latenz-Schwellwert (ms)</label>
+        <type>text</type>
+        <help>0 = aus.</help>
+    </field>
+    <field>
+        <id>failover.failback</id>
+        <label>Zurückschalten</label>
+        <type>dropdown</type>
+        <help>Verhalten, wenn ein bevorzugtes Mitglied wieder verfügbar ist.</help>
+    </field>
+    <field>
+        <id>failover.failback_minutes</id>
+        <label>Stabile Zeit (Minuten)</label>
+        <type>text</type>
+        <help>Bei "Verzögert": so lange muss das bevorzugte Mitglied durchgehend verfügbar sein.</help>
+    </field>
+    <field>
+        <type>header</type>
+        <label>DNS-Anbieter</label>
+    </field>
+    <field>
+        <id>failover.service</id>
+        <label>Anbieter</label>
+        <type>dropdown</type>
+        <help>Dienst, bei dem der Eintrag aktualisiert wird (gleiche Anbieter wie os-ddclient, native Implementierung).</help>
+    </field>
+    <field>
+        <id>failover.protocol</id>
+        <label>Protokoll</label>
+        <type>dropdown</type>
+        <help>dyndns2 oder eine eigene URL per GET/POST/PUT.</help>
+    </field>
+    <field>
+        <id>failover.server</id>
+        <label>Server / URL</label>
+        <type>text</type>
+        <help>dyndns2: Hostname des Update-Servers. GET/POST/PUT: vollständige URL, __MYIP__ wird durch die Adresse und __HOSTNAME__ durch die Hostnamen ersetzt. PowerDNS: API-URL.</help>
+    </field>
+    <field>
+        <id>failover.resourceId</id>
+        <label>Resource-ID</label>
+        <type>text</type>
+        <help>Azure: Resource-ID der DNS-Zone.</help>
+    </field>
+    <field>
+        <id>failover.username</id>
+        <label>Benutzername</label>
+        <type>text</type>
+        <help>Benutzer, Key-ID oder Kundennummer je nach Anbieter. Cloudflare: leer lassen für API-Token, E-Mail für Global API Key.</help>
+    </field>
+    <field>
+        <id>failover.password</id>
+        <label>Passwort / Token</label>
+        <type>password</type>
+        <help>Passwort, API-Token oder Secret. Beim Bearbeiten leer lassen, um den gespeicherten Wert zu behalten.</help>
+    </field>
+    <field>
+        <id>failover.zone</id>
+        <label>Zone</label>
+        <type>text</type>
+        <help>Zone, die den Eintrag enthält (z.B. example.com).</help>
+    </field>
+    <field>
+        <id>failover.hostnames</id>
+        <label>Hostnamen</label>
+        <type>text</type>
+        <help>Kommagetrennt, relativ zur Zone oder voll qualifiziert. "@" steht für die Zone selbst.</help>
+    </field>
+    <field>
+        <id>failover.ttl</id>
+        <label>TTL</label>
+        <type>text</type>
+        <help>Gültigkeit des Eintrags in Sekunden (Cloudflare: 1 = automatisch).</help>
+    </field>
+    <field>
+        <id>failover.proxied</id>
+        <label>Cloudflare-Proxy</label>
+        <type>checkbox</type>
+        <help>Über Cloudflare proxyen (orangene Wolke). Für VPN/Portweiterleitungen aus lassen.</help>
+    </field>
+    <field>
+        <id>failover.wildcard</id>
+        <label>Wildcard</label>
+        <type>checkbox</type>
+        <help>Wildcard-Eintrag mitsetzen (dyndns2-Dienste).</help>
+    </field>
+</form>

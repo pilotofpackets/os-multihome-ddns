@@ -1,8 +1,0 @@
-<menu>
-    <Services>
-        <CloudflareDDNS VisibleName="Cloudflare DDNS" cssClass="fa fa-cloud fa-fw">
-            <Settings order="10" url="/ui/cloudflareddns/"/>
-            <Log order="100" VisibleName="Log File" url="/ui/diagnostics/log/core/cfddns"/>
-        </CloudflareDDNS>
-    </Services>
-</menu>

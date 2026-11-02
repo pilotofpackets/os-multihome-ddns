@@ -1,0 +1,28 @@
+Dynamic DNS client for multi-WAN setups.
+
+Every entry is bound to an interface. The public address is taken from the
+interface (e.g. PPPoE) or queried from the same check services as os-ddclient,
+using the interface address as source. Own route-to rules make sure the query
+leaves through that interface's gateway, independent of "Disable force gateway".
+Private (RFC 1918/4193), reserved and CGNAT (RFC 6598) addresses are highlighted
+and never written.
+
+Providers are the native ones of os-ddclient (Cloudflare with round robin support,
+dyndns2 family, Hetzner, netcup, INWX, Strato, All-Inkl, Route 53, Azure, ...).
+
+Failover DNS: a name points to an available member interface, based on the
+dpinger gateway status (down, packet loss, latency or own thresholds), with
+order/priority/latency strategies and immediate/delayed/manual failback.
+
+Plugin Changelog
+================
+
+2.0
+
+* Renamed to Multi-WAN DynDNS, all os-ddclient providers and check services
+* Failover DNS, full logging with selectable level, force update
+* Private/CGNAT detection and blocking
+
+1.0
+
+* Initial release (Cloudflare only)

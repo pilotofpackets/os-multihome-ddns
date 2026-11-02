@@ -1,0 +1,135 @@
+<form>
+    <field>
+        <type>header</type>
+        <label>Interface</label>
+    </field>
+    <field>
+        <id>account.enabled</id>
+        <label>Aktiviert</label>
+        <type>checkbox</type>
+    </field>
+    <field>
+        <id>account.description</id>
+        <label>Beschreibung</label>
+        <type>text</type>
+        <help>Name des Anschlusses, z.B. "DSL1 Telekom". Wird auch im Failover angezeigt.</help>
+    </field>
+    <field>
+        <id>account.interface</id>
+        <label>Interface</label>
+        <type>dropdown</type>
+        <help>Anschluss, dessen öffentliche Adresse eingetragen wird.</help>
+    </field>
+    <field>
+        <id>account.ipversion</id>
+        <label>IP-Version</label>
+        <type>dropdown</type>
+        <help>Für IPv4 und IPv6 je einen Eintrag anlegen.</help>
+    </field>
+    <field>
+        <id>account.checkip</id>
+        <label>IP-Ermittlung</label>
+        <type>dropdown</type>
+        <help>Automatisch: öffentliche Interface-Adresse direkt verwenden (z.B. PPPoE), sonst den Prüfdienst über dieses Interface abfragen. Private (RFC 1918/4193), reservierte und CGNAT-Adressen (RFC 6598) werden nie geschrieben.</help>
+    </field>
+    <field>
+        <id>account.checkip_service</id>
+        <label>Prüfdienst</label>
+        <type>dropdown</type>
+        <help>Dieselben Dienste wie in os-ddclient. Die Abfrage läuft mit der Adresse dieses Interfaces als Quelle über dessen Gateway – mehrere Interfaces können denselben Dienst nutzen.</help>
+    </field>
+    <field>
+        <id>account.custom_url</id>
+        <label>Eigene Prüf-URL</label>
+        <type>text</type>
+        <help>Muss die Adresse als Text liefern.</help>
+    </field>
+    <field>
+        <id>account.force_ssl</id>
+        <label>HTTPS für Prüfdienst</label>
+        <type>checkbox</type>
+    </field>
+    <field>
+        <id>account.dynipv6host</id>
+        <label>IPv6-Host-Teil</label>
+        <type>text</type>
+        <advanced>true</advanced>
+        <help>Optional: Interface-Identifier ersetzen, um einen Host hinter der Firewall einzutragen (z.B. ::1000).</help>
+    </field>
+    <field>
+        <id>account.interval</id>
+        <label>Prüfintervall (Minuten)</label>
+        <type>text</type>
+        <help>1 = jede Minute prüfen und bei Änderung sofort aktualisieren.</help>
+    </field>
+    <field>
+        <type>header</type>
+        <label>DNS-Anbieter</label>
+    </field>
+    <field>
+        <id>account.service</id>
+        <label>Anbieter</label>
+        <type>dropdown</type>
+        <help>Dienst, bei dem der Eintrag aktualisiert wird (gleiche Anbieter wie os-ddclient, native Implementierung).</help>
+    </field>
+    <field>
+        <id>account.protocol</id>
+        <label>Protokoll</label>
+        <type>dropdown</type>
+        <help>dyndns2 oder eine eigene URL per GET/POST/PUT.</help>
+    </field>
+    <field>
+        <id>account.server</id>
+        <label>Server / URL</label>
+        <type>text</type>
+        <help>dyndns2: Hostname des Update-Servers. GET/POST/PUT: vollständige URL, __MYIP__ wird durch die Adresse und __HOSTNAME__ durch die Hostnamen ersetzt. PowerDNS: API-URL.</help>
+    </field>
+    <field>
+        <id>account.resourceId</id>
+        <label>Resource-ID</label>
+        <type>text</type>
+        <help>Azure: Resource-ID der DNS-Zone.</help>
+    </field>
+    <field>
+        <id>account.username</id>
+        <label>Benutzername</label>
+        <type>text</type>
+        <help>Benutzer, Key-ID oder Kundennummer je nach Anbieter. Cloudflare: leer lassen für API-Token, E-Mail für Global API Key.</help>
+    </field>
+    <field>
+        <id>account.password</id>
+        <label>Passwort / Token</label>
+        <type>password</type>
+        <help>Passwort, API-Token oder Secret. Beim Bearbeiten leer lassen, um den gespeicherten Wert zu behalten.</help>
+    </field>
+    <field>
+        <id>account.zone</id>
+        <label>Zone</label>
+        <type>text</type>
+        <help>Zone, die den Eintrag enthält (z.B. example.com).</help>
+    </field>
+    <field>
+        <id>account.hostnames</id>
+        <label>Hostnamen</label>
+        <type>text</type>
+        <help>Kommagetrennt, relativ zur Zone oder voll qualifiziert. "@" steht für die Zone selbst.</help>
+    </field>
+    <field>
+        <id>account.ttl</id>
+        <label>TTL</label>
+        <type>text</type>
+        <help>Gültigkeit des Eintrags in Sekunden (Cloudflare: 1 = automatisch).</help>
+    </field>
+    <field>
+        <id>account.proxied</id>
+        <label>Cloudflare-Proxy</label>
+        <type>checkbox</type>
+        <help>Über Cloudflare proxyen (orangene Wolke). Für VPN/Portweiterleitungen aus lassen.</help>
+    </field>
+    <field>
+        <id>account.wildcard</id>
+        <label>Wildcard</label>
+        <type>checkbox</type>
+        <help>Wildcard-Eintrag mitsetzen (dyndns2-Dienste).</help>
+    </field>
+</form>
