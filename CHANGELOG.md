@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.3.2 – 2026-11-13
+
+- Failover log lines carry the IP version, and "no member available" lists the reason per member
+
 ## 2.3.1 – 2026-11-13
 
 - **Fix:** `Call to undefined function mwexec()` on interface address changes and gateway alarms.

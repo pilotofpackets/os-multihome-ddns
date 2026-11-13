@@ -274,7 +274,7 @@ def run_failovers(cfg, state, now, log, factory, mode, selected, counts):
         return
     gateways = gateway_status(log)
     for failover in active:
-        name = failover['description'] or failover['hostnames']
+        name = '%s [%s]' % (failover['description'] or failover['hostnames'], FAMILIES[failover['ipversion']])
         before = state.get('failovers', {}).get(failover['uuid'], {}).get('active')
         fstate, member = choose(failover, cfg, state, gateways, now, log)
         if member is None:

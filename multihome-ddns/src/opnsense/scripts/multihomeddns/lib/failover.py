@@ -109,7 +109,7 @@ def choose(failover, cfg, state, gateways, now, log):
     """ aktives Mitglied bestimmen; liefert (fstate, Mitglied-Health oder None) """
     fstate = state.setdefault('failovers', {}).setdefault(failover['uuid'], {})
     accounts = {acc['uuid']: acc for acc in cfg['accounts']}
-    name = failover['description'] or failover['hostnames']
+    name = '%s [%s]' % (failover['description'] or failover['hostnames'], FAMILIES[failover['ipversion']])
 
     members = []
     for idx, uuid in enumerate(failover['members']):
@@ -139,7 +139,8 @@ def choose(failover, cfg, state, gateways, now, log):
 
     if not candidates:
         fstate['status'] = 'error'
-        fstate['error'] = 'Kein Mitglied verfügbar - Eintrag bleibt auf dem letzten Stand'
+        why = '; '.join('%s: %s' % (m['name'], m['reason']) for m in members) or 'keine Mitglieder konfiguriert'
+        fstate['error'] = 'Kein Mitglied verfügbar - Eintrag bleibt auf dem letzten Stand (%s)' % why
         log.error('Failover %s: %s' % (name, fstate['error']))
         return fstate, None
 
