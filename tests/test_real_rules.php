@@ -37,7 +37,6 @@ namespace {
     foreach (['Util', 'Rule', 'FilterRule', 'SNatRule', 'Plugin'] as $cls) {
         require_once $lib . $cls . '.php';
     }
-    function mwexec($c) {}
     require getenv('INC');
 
     $fw = new \OPNsense\Firewall\Plugin();

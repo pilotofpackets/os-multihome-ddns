@@ -60,14 +60,40 @@ function multihomeddns_configure_newwanip($verbose = false)
 {
     if (multihomeddns_enabled()) {
         // give routes and the filter reload some time to settle
-        mwexec('(/bin/sleep 15; /usr/local/sbin/configctl multihomeddns check) > /dev/null 2>&1 &');
+        multihomeddns_background('check', 15);
     }
 }
 
 function multihomeddns_configure_monitor($verbose = false)
 {
     if (multihomeddns_enabled()) {
-        mwexec('(/bin/sleep 5; /usr/local/sbin/configctl multihomeddns failover) > /dev/null 2>&1 &');
+        multihomeddns_background('failover', 5);
+    }
+}
+
+/**
+ * Run a configd action detached after a delay. Uses plain PHP only (no core shell
+ * helpers, their names changed between releases) and never throws: an error in here
+ * would abort the interface / gateway event handling of the firewall itself.
+ * Events come in bursts (link flaps, several address families), so an action that is
+ * already scheduled is not scheduled again.
+ */
+function multihomeddns_background($action, $delay)
+{
+    try {
+        if (!in_array($action, ['check', 'failover'], true)) {
+            return;
+        }
+        $stamp = "/tmp/multihomeddns_{$action}.pending";
+        $mtime = @filemtime($stamp);
+        if ($mtime !== false && time() - $mtime < (int)$delay + 5) {
+            return;
+        }
+        @touch($stamp);
+        $cmd = sprintf('/bin/sleep %d; /usr/local/sbin/configctl -d multihomeddns %s', (int)$delay, $action);
+        @exec('/usr/sbin/daemon -f /bin/sh -c ' . escapeshellarg($cmd) . ' > /dev/null 2>&1');
+    } catch (\Throwable $e) {
+        @syslog(LOG_ERR, 'multihomeddns: ' . $e->getMessage());
     }
 }
 
@@ -84,6 +110,16 @@ function multihomeddns_configure_monitor($verbose = false)
  * the default route - every check service would then report the IP of the default WAN.
  */
 function multihomeddns_firewall(\OPNsense\Firewall\Plugin $fw)
+{
+    try {
+        multihomeddns_firewall_rules($fw);
+    } catch (\Throwable $e) {
+        // never break the filter reload of the firewall because of this plugin
+        @syslog(LOG_ERR, 'multihomeddns: firewall rules skipped: ' . $e->getMessage());
+    }
+}
+
+function multihomeddns_firewall_rules(\OPNsense\Firewall\Plugin $fw)
 {
     $mdl = multihomeddns_settings();
     if ($mdl === null || !multihomeddns_enabled() || (string)$mdl->general->policy_routing == '0') {

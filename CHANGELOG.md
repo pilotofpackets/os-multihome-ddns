@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.3.1 – 2026-11-13
+
+- **Fix:** `Call to undefined function mwexec()` on interface address changes and gateway alarms.
+  The helper does not exist in current OPNsense; the error aborted the event handling
+  (`rc.newwanip`, `rc.linkup`, gateway monitor). The hooks now use plain PHP, cannot throw anymore
+  and collapse bursts of events into one run
+- The firewall hook is guarded as well, an error in the plugin can no longer break a filter reload
+- CI checks every function call of the PHP hooks against OPNsense core
+
 ## 2.3.0 – 2026-11-02
 
 - **Fix:** the tcp route-to rule for the web check was silently dropped by OPNsense (port lists like

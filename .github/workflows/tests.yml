@@ -21,6 +21,6 @@ jobs:
       - name: Fetch OPNsense core rule classes
         run: |
           git clone -q --depth 1 --filter=blob:none --sparse https://github.com/opnsense/core /tmp/opnsense-core
-          git -C /tmp/opnsense-core sparse-checkout set src/opnsense/mvc/app/library/OPNsense/Firewall
+          git -C /tmp/opnsense-core sparse-checkout set src/opnsense/mvc/app/library/OPNsense/Firewall src/etc/inc
       - name: Scenario tests
         run: OPNSENSE_CORE=/tmp/opnsense-core sh tests/run.sh

@@ -16,7 +16,6 @@ namespace OPNsense\Firewall { class Plugin { public $rules=[]; private $map=['WA
   function registerFilterRule($p,$c,$d=null){ $this->rules[]=[$p,$c]; }
   public $nat=[]; function registerSourceNatRule($p,$c){ $this->nat[]=[$p,$c]; } } }
 namespace {
-  function mwexec($c){ echo "mwexec: $c\n"; }
   require getenv('INC');
   $fw = new \OPNsense\Firewall\Plugin; multihomeddns_firewall($fw);
   $got = [];
@@ -28,5 +27,5 @@ namespace {
   if ($natOwn || count($natOther) != 3) { fwrite(STDERR, "FAIL hook: NAT exemption wrong\n"); exit(1); }
   echo "hook OK: interface gateway, manual gateway, fallback gateway, NAT exemption\n";
   foreach ($fw->rules as [$p,$c]) printf("prio %d: pass out quick %s %s from %s port %s gw=%s | %s\n",$p,$c['ipprotocol'],$c['protocol'],$c['from'],$c['destination']['port'],$c['gateway'],$c['descr']);
-  print_r(multihomeddns_cron()); multihomeddns_configure_newwanip(); multihomeddns_configure_monitor(); print_r(array_keys(multihomeddns_configure()));
+  print_r(multihomeddns_cron()); print_r(array_keys(multihomeddns_configure()));
 }

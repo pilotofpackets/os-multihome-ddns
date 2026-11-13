@@ -29,6 +29,13 @@ if command -v php >/dev/null 2>&1; then
             INC="$ROOT/multihome-ddns/src/etc/inc/plugins.inc.d/multihomeddns.inc" \
             php -d error_reporting=E_ALL "$HERE/test_real_rules.php" > "$T/real_rules.out" || { cat "$T/real_rules.out"; exit 1; }
         tail -1 "$T/real_rules.out"
+    fi
+    if [ -n "$OPNSENSE_CORE" ] && [ -d "$OPNSENSE_CORE/src/etc/inc" ]; then
+        echo "### calls to functions that do not exist in OPNsense core"
+        php "$HERE/test_undefined_functions.php" "$OPNSENSE_CORE" \
+            "$ROOT/multihome-ddns/src/etc/inc/plugins.inc.d/multihomeddns.inc" \
+            "$ROOT/multihome-ddns/src/opnsense/scripts/multihomeddns/gateways.php" \
+            "$ROOT/multihome-ddns/src/opnsense/scripts/multihomeddns/migrate.php"
     else
         echo "### (real rule test skipped, set OPNSENSE_CORE=/path/to/opnsense-core)"
     fi
